@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next-auth/upstash-redis-adapter": "^3.0.1",
+    "@upstash/redis": "^1.11.0",
     "next": "12.2.4",
+    "next-auth": "^4.10.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "sass": "^1.54.4"
