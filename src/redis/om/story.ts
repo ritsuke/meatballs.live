@@ -5,9 +5,11 @@ interface Story {
   id: string
   domain: string | null
   poster: string
+  score: number
   source: string
   text: string | null
   title: string
+  total_comments: number
   url: string | null
   createdAt: number
 }
@@ -20,11 +22,13 @@ const story = async () => {
       id: { type: 'string' },
       domain: { type: 'string' },
       poster: { type: 'text' },
+      score: { type: 'number' },
       source: { type: 'string' },
       text: { type: 'text' },
       title: { type: 'text' },
+      total_comments: { type: 'number' },
       url: { type: 'string' },
-      createdAt: { type: 'date' }
+      created: { type: 'date' }
     })
 
   const storyRepository = redisOmClient.fetchRepository(storySchema)

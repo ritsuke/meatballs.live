@@ -16,7 +16,10 @@ const IngestApiQuery = z.object({
   apiKey: z.string({ required_error: 'API key is required.' }).min(1),
   dataSource: z.nativeEnum(DATA_SOURCE, {
     required_error: 'Data source is required.'
-  })
+  }),
+  maxStories: z
+    .preprocess((value) => parseInt(value as string), z.number())
+    .optional()
 })
 
 IngestApi.get(async (req, res) => {
@@ -24,7 +27,7 @@ IngestApi.get(async (req, res) => {
 
   if (query.success) {
     const {
-      data: { apiKey, dataSource }
+      data: { apiKey, dataSource, maxStories }
     } = query
 
     // check for authorized ingest request
@@ -39,7 +42,7 @@ IngestApi.get(async (req, res) => {
     switch (dataSource) {
       case DATA_SOURCE.HN:
         try {
-          const { success, error } = await processHackerNewsIngestStoryData()
+          await processHackerNewsIngestStoryData(maxStories)
         } catch (error) {
           console.error(error)
 

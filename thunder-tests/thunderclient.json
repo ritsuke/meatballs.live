@@ -24,11 +24,11 @@
     "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "containerId": "",
     "name": "Ingest Hacker News",
-    "url": "localhost:3000/api/services/ingest/story?apiKey={{INGEST_API_KEY}}&dataSource=hn",
+    "url": "localhost:3000/api/services/ingest/story?apiKey={{INGEST_API_KEY}}&dataSource=hn&maxStories=25",
     "method": "GET",
     "sortNum": 10000,
     "created": "2022-08-13T14:27:19.176Z",
-    "modified": "2022-08-14T01:33:15.006Z",
+    "modified": "2022-08-14T13:16:33.506Z",
     "headers": [],
     "params": [
       {
@@ -39,6 +39,11 @@
       {
         "name": "dataSource",
         "value": "hn",
+        "isPath": false
+      },
+      {
+        "name": "maxStories",
+        "value": "25",
         "isPath": false
       }
     ],
