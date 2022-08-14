@@ -7,31 +7,46 @@ import { DATA_SOURCE, HTTP_STATUS_CODE } from '@/types/constants'
 import { onError, onNoMatch } from '@/utils/api'
 import { processHNNewStoriesIngestData } from '@/utils/ingest/processors'
 
-const IngestApi = nextConnect<NextApiRequest, NextApiResponse>({
-  onError,
-  onNoMatch
+const NewStoriesIngestServiceApi = nextConnect<NextApiRequest, NextApiResponse>(
+  {
+    onError,
+    onNoMatch
+  }
+)
+
+const NewStoriesIngestServiceApiHeaders = z.object({
+  authorization: z.preprocess(
+    (value) =>
+      // TODO: vercel wraps values with double quotes,
+      // but thunder client includes as part of value; report
+      typeof value === 'string'
+        ? value.replace(/"/g, '').replace('Bearer ', '')
+        : undefined,
+    z.string({ required_error: 'API key is required' }).min(1)
+  )
 })
 
-const IngestApiQuery = z.object({
-  apiKey: z.string({ required_error: 'API key is required.' }).min(1),
+const NewStoriesIngestServiceApiQuery = z.object({
   dataSource: z.nativeEnum(DATA_SOURCE, {
     required_error: 'Data source is required.'
   }),
   max: z.preprocess((value) => parseInt(value as string), z.number()).optional()
 })
 
-IngestApi.get(async (req, res) => {
-  const query = IngestApiQuery.safeParse(req.query)
+NewStoriesIngestServiceApi.post(async (req, res) => {
+  const headers = NewStoriesIngestServiceApiHeaders.safeParse(req.headers),
+    query = NewStoriesIngestServiceApiQuery.safeParse(req.query)
 
-  if (query.success) {
+  if (headers.success && query.success) {
     const {
-      data: { apiKey, dataSource, max }
-    } = query
+        data: { authorization: apiKey }
+      } = headers,
+      {
+        data: { dataSource, max }
+      } = query
 
     // check for authorized ingest request
-    // TODO: vercel wraps values with double quotes,
-    // but thunder client includes as part of value; report
-    if (apiKey.replace(/"/g, '') !== process.env.INGEST_API_KEY) {
+    if (apiKey !== process.env.INGEST_API_KEY) {
       return res
         .status(HTTP_STATUS_CODE.UNAUTHORIZED)
         .end('Missing or invalid API key.')
@@ -64,4 +79,4 @@ IngestApi.get(async (req, res) => {
   }
 })
 
-export default IngestApi
+export default NewStoriesIngestServiceApi
