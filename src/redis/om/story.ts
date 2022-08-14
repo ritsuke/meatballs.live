@@ -11,7 +11,7 @@ interface Story {
   title: string
   total_comments: number
   url: string | null
-  createdAt: number
+  created: number
 }
 
 class Story extends Entity {}

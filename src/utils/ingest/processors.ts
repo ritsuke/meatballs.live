@@ -76,7 +76,7 @@ export const processHNNewStoriesIngestData = async (max?: number) => {
           newStory.title = title
           newStory.total_comments = total_comments
           newStory.url = url ?? null
-          newStory.createdAt = time
+          newStory.created = time
 
           // save
           await storyRepository.save(newStory)
