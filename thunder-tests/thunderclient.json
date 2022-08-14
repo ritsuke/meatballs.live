@@ -1,0 +1,67 @@
+[
+  {
+    "_id": "b41fe7d9-e778-4f30-bad7-1f7b6292156b",
+    "colId": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
+    "containerId": "",
+    "name": "Get New Stories",
+    "url": "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty",
+    "method": "GET",
+    "sortNum": 10000,
+    "created": "2022-08-13T14:10:53.480Z",
+    "modified": "2022-08-13T14:11:04.324Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "print",
+        "value": "pretty",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "9fe226ff-ad2d-453c-8047-69ce43f16168",
+    "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
+    "containerId": "",
+    "name": "Ingest Hacker News",
+    "url": "localhost:3000/api/services/ingest/story?apiKey={{INGEST_API_KEY}}&dataSource=hn",
+    "method": "GET",
+    "sortNum": 10000,
+    "created": "2022-08-13T14:27:19.176Z",
+    "modified": "2022-08-14T01:33:15.006Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "apiKey",
+        "value": "{{INGEST_API_KEY}}",
+        "isPath": false
+      },
+      {
+        "name": "dataSource",
+        "value": "hn",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "eb448a3f-4266-44a9-b66a-167656bdcb3e",
+    "colId": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
+    "containerId": "",
+    "name": "Get Story by ID",
+    "url": "https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty",
+    "method": "GET",
+    "sortNum": 20000,
+    "created": "2022-08-13T22:12:47.806Z",
+    "modified": "2022-08-13T22:13:07.751Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "print",
+        "value": "pretty",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
+    "colName": "Hacker News Official API",
+    "created": "2022-08-12T16:07:36.458Z",
+    "sortNum": 10000,
+    "folders": []
+  },
+  {
+    "_id": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
+    "colName": "meatballs.live (dev)",
+    "created": "2022-08-13T14:24:56.156Z",
+    "sortNum": 20000,
+    "folders": []
+  }
+]

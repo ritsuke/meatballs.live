@@ -11,11 +11,16 @@
   "dependencies": {
     "@next-auth/upstash-redis-adapter": "^3.0.1",
     "@upstash/redis": "^1.11.0",
+    "axios": "^0.27.2",
     "next": "12.2.4",
     "next-auth": "^4.10.3",
+    "next-connect": "^0.13.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "sass": "^1.54.4"
+    "redis": "^4.2.0",
+    "redis-om": "^0.3.6",
+    "sass": "^1.54.4",
+    "zod": "^3.18.0"
   },
   "devDependencies": {
     "@types/node": "18.7.1",
