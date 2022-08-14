@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { DATA_SOURCE, HTTP_STATUS_CODE } from '@/types/constants'
 
 import { onError, onNoMatch } from '@/utils/api'
-import { processHackerNewsIngestStoryData } from '@/utils/ingest/processors'
+import { processHNNewStoriesIngestData } from '@/utils/ingest/processors'
 
 const IngestApi = nextConnect<NextApiRequest, NextApiResponse>({
   onError,
@@ -17,9 +17,7 @@ const IngestApiQuery = z.object({
   dataSource: z.nativeEnum(DATA_SOURCE, {
     required_error: 'Data source is required.'
   }),
-  maxStories: z
-    .preprocess((value) => parseInt(value as string), z.number())
-    .optional()
+  max: z.preprocess((value) => parseInt(value as string), z.number()).optional()
 })
 
 IngestApi.get(async (req, res) => {
@@ -27,7 +25,7 @@ IngestApi.get(async (req, res) => {
 
   if (query.success) {
     const {
-      data: { apiKey, dataSource, maxStories }
+      data: { apiKey, dataSource, max }
     } = query
 
     // check for authorized ingest request
@@ -42,7 +40,7 @@ IngestApi.get(async (req, res) => {
     switch (dataSource) {
       case DATA_SOURCE.HN:
         try {
-          await processHackerNewsIngestStoryData(maxStories)
+          await processHNNewStoriesIngestData(max)
         } catch (error) {
           console.error(error)
 

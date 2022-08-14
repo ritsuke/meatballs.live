@@ -23,14 +23,14 @@ const HN_API_ENDPOINTS = {
 
 // TODO: abstract when additional data sources are introduced
 // as of 20220814, HN API returns 500 newest story IDs
-export const processHackerNewsIngestStoryData = async (maxStories?: number) => {
+export const processHNNewStoriesIngestData = async (max?: number) => {
   try {
     // get newest story IDs from HN API and trim to max
     const newStoriesById = (
         await axios.get<string[]>(HN_API_ENDPOINTS.NEW_STORIES)
       ).data,
       newStoriesByIdTrimmedToMax = [
-        ...newStoriesById.slice(0, maxStories || newStoriesById.length)
+        ...newStoriesById.slice(0, max || newStoriesById.length)
       ],
       newStoriesToSaveToDb: string[] = []
 
