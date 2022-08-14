@@ -2,8 +2,8 @@ import axios from 'axios'
 
 import { isAxiosError } from '../api'
 
-import useRedis from '@/redis/useRedis'
-import useStoryRepository from '@/redis/om/Story'
+import redis from '@/redis/client'
+import story from '@/redis/om/story'
 
 interface HackerNewsStoryData {
   by: string
@@ -36,8 +36,9 @@ export const processHackerNewsIngestStoryData = async (
       ).data.slice(0, maxNewStories),
       newStoriesToSaveToDb: string[] = []
 
-    const { redisClient } = await useRedis(),
-      { storyRepository, closeStoryRepository } = await useStoryRepository()
+    const { client: redisClient } = await redis(),
+      { repository: storyRepository, closeRepository: closeStoryRepository } =
+        await story()
 
     // check if any stories exist in the db
     const existingStoriesById = await redisClient.json.mGet(

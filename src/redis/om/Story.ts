@@ -1,5 +1,5 @@
 import { Entity, Schema } from 'redis-om'
-import useRedis from '../useRedis'
+import redis from '../client'
 
 interface Story {
   id: string
@@ -14,8 +14,8 @@ interface Story {
 
 class Story extends Entity {}
 
-const useStoryRepository = async () => {
-  const { redisOmClient } = await useRedis(),
+const story = async () => {
+  const { omClient: redisOmClient } = await redis(),
     storySchema = new Schema(Story, {
       id: { type: 'string' },
       domain: { type: 'string' },
@@ -32,9 +32,9 @@ const useStoryRepository = async () => {
   await storyRepository.createIndex()
 
   return {
-    storyRepository,
-    closeStoryRepository: async () => await redisOmClient.close()
+    repository: storyRepository,
+    closeRepository: async () => await redisOmClient.close()
   }
 }
 
-export default useStoryRepository
+export default story
