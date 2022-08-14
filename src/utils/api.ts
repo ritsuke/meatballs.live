@@ -21,3 +21,10 @@ export const onNoMatch = (_: NextApiRequest, res: NextApiResponse) => {
 export const isAxiosError = <ResponseType>(
   error: unknown
 ): error is AxiosError<ResponseType> => axios.isAxiosError(error)
+
+// TODO: vercel wraps values with double quotes,
+// but thunder client includes as part of value; report
+export const preprocessAuthHeader = (value: unknown) =>
+  typeof value === 'string'
+    ? value.replace(/"/g, '').replace('Bearer ', '')
+    : undefined
