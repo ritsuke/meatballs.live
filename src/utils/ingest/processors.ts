@@ -91,10 +91,12 @@ export const processHNNewStoriesIngestData = async (max?: number) => {
     await closeStoryRepository()
     await redisClient.disconnect()
 
-    // done!
-    console.info(`Saved ${newStoriesToSaveToDb.length} new stories to DB...`)
+    const totalNewStoriesSavedToDb = newStoriesToSaveToDb.length
 
-    return { success: true }
+    // done!
+    console.info(`Saved ${totalNewStoriesSavedToDb} new stories to DB...`)
+
+    return { success: true, data: { total: totalNewStoriesSavedToDb } }
   } catch (error) {
     console.error(error)
 

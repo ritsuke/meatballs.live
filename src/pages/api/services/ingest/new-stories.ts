@@ -52,10 +52,14 @@ NewStoriesIngestServiceApi.post(async (req, res) => {
         .end('Missing or invalid API key.')
     }
 
+    let totalStoriesSaved = 0
+
     switch (dataSource) {
       case DATA_SOURCE.HN:
         try {
-          await processHNNewStoriesIngestData(max)
+          const { data } = await processHNNewStoriesIngestData(max)
+
+          totalStoriesSaved = data.total
         } catch (error) {
           console.error(error)
 
@@ -69,7 +73,9 @@ NewStoriesIngestServiceApi.post(async (req, res) => {
           .end(`'${dataSource}' is not implemented.`)
     }
 
-    return res.status(HTTP_STATUS_CODE.OK).end(dataSource)
+    return res
+      .status(HTTP_STATUS_CODE.OK)
+      .end(JSON.stringify({ data: { total: totalStoriesSaved } }))
   }
 
   if (!query.success) {
