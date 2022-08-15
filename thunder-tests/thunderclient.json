@@ -23,12 +23,12 @@
     "_id": "9fe226ff-ad2d-453c-8047-69ce43f16168",
     "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "containerId": "",
-    "name": "Ingest Hacker News",
-    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn&max=10",
+    "name": "Ingest HN New Stories",
+    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn",
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-08-13T14:27:19.176Z",
-    "modified": "2022-08-14T19:54:21.084Z",
+    "modified": "2022-08-15T14:05:23.444Z",
     "headers": [
       {
         "name": "Authorization",
@@ -44,6 +44,7 @@
       {
         "name": "max",
         "value": "10",
+        "isDisabled": true,
         "isPath": false
       }
     ],
@@ -64,6 +65,31 @@
       {
         "name": "print",
         "value": "pretty",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "d33cb4f2-4d6a-4464-a13c-fc97301a0444",
+    "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
+    "containerId": "",
+    "name": "Ingest HN Story Activity",
+    "url": "localhost:3000/api/services/ingest/story-activity?dataSource=hn",
+    "method": "POST",
+    "sortNum": 20000,
+    "created": "2022-08-14T20:18:02.787Z",
+    "modified": "2022-08-14T20:19:41.335Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{INGEST_API_KEY}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "dataSource",
+        "value": "hn",
         "isPath": false
       }
     ],
