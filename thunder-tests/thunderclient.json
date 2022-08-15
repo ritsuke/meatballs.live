@@ -28,7 +28,7 @@
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-08-13T14:27:19.176Z",
-    "modified": "2022-08-15T14:05:23.444Z",
+    "modified": "2022-08-15T19:00:58.124Z",
     "headers": [
       {
         "name": "Authorization",
@@ -55,11 +55,11 @@
     "colId": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
     "containerId": "",
     "name": "Get Story by ID",
-    "url": "https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty",
+    "url": "https://hacker-news.firebaseio.com/v0/item/32471553.json?print=pretty",
     "method": "GET",
     "sortNum": 20000,
     "created": "2022-08-13T22:12:47.806Z",
-    "modified": "2022-08-13T22:13:07.751Z",
+    "modified": "2022-08-15T17:30:52.395Z",
     "headers": [],
     "params": [
       {

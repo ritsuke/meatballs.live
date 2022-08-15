@@ -193,7 +193,7 @@ export const processHNStoryActivityIngestData = async () => {
             // redis will skip commands if key already exists
             ingestStoryActivityTSTransaction.ts
               // will create score activity time series
-              .create(storyActivityKey, {
+              .create(`${storyActivityKey}:score`, {
                 DUPLICATE_POLICY: storyActivityTSBaseOptions.DUPLICATE_POLICY,
                 LABELS: {
                   ...storyActivityTSBaseOptions.LABELS,
@@ -201,7 +201,7 @@ export const processHNStoryActivityIngestData = async () => {
                 }
               })
               // will create score activity time series by day (compacted)
-              .ts.create(`${storyActivityKey}:score_by_day`, {
+              .ts.create(`${storyActivityKey}:score:by_day`, {
                 LABELS: {
                   ...storyActivityTSBaseOptions.LABELS,
                   type: 'score'
@@ -209,14 +209,14 @@ export const processHNStoryActivityIngestData = async () => {
               })
               .ts.createRule(
                 storyActivityKey,
-                `${storyActivityKey}:score_by_day`,
+                `${storyActivityKey}:score:by_day`,
                 TimeSeriesAggregationType.SUM,
                 86400000
               )
               // will add score activity sample
-              .ts.add(storyActivityKey, now, latestStoryScore)
+              .ts.add(`${storyActivityKey}:score`, now, latestStoryScore)
               // will create comment total activity time series
-              .ts.create(storyActivityKey, {
+              .ts.create(`${storyActivityKey}:comment_total`, {
                 DUPLICATE_POLICY: storyActivityTSBaseOptions.DUPLICATE_POLICY,
                 LABELS: {
                   ...storyActivityTSBaseOptions.LABELS,
@@ -224,7 +224,7 @@ export const processHNStoryActivityIngestData = async () => {
                 }
               })
               // will create comment total activity time series by day (compacted)
-              .ts.create(`${storyActivityKey}:comment_total_by_day`, {
+              .ts.create(`${storyActivityKey}:comment_total:by_day`, {
                 LABELS: {
                   ...storyActivityTSBaseOptions.LABELS,
                   type: 'comment_total'
@@ -233,12 +233,16 @@ export const processHNStoryActivityIngestData = async () => {
               // https://redis.io/docs/stack/timeseries/quickstart/#downsampling
               .ts.createRule(
                 storyActivityKey,
-                `${storyActivityKey}:comment_total_by_day`,
+                `${storyActivityKey}:comment_total:by_day`,
                 TimeSeriesAggregationType.SUM,
                 86400000
               )
               // will add comment total activity sample
-              .ts.add(storyActivityKey, now, latestStoryCommentTotal)
+              .ts.add(
+                `${storyActivityKey}:comment_total`,
+                now,
+                latestStoryCommentTotal
+              )
           }
         } catch (error) {
           console.error(error)
