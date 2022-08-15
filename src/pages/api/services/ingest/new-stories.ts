@@ -55,7 +55,7 @@ NewStoriesIngestServiceApi.post(async (req, res) => {
 
     return res
       .status(HTTP_STATUS_CODE.OK)
-      .end(JSON.stringify({ data: { total: totalStoriesSaved } }))
+      .end(JSON.stringify({ data: { totalStoriesSaved } }))
   }
 
   const { error } = query

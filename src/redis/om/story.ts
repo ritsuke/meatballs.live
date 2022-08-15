@@ -3,13 +3,14 @@ import redis from '../client'
 
 interface Story {
   id: string
+  deleted?: boolean
   domain: string | null
-  poster: string
-  score: number
+  poster: string | null
+  score: number | null
   source: string
   text: string | null
-  title: string
-  comment_total: number
+  title: string | null
+  comment_total: number | null
   url: string | null
   created: number
 }
@@ -20,6 +21,7 @@ const story = async () => {
   const { omClient: redisOmClient } = await redis(),
     storySchema = new Schema(Story, {
       id: { type: 'string' },
+      deleted: { type: 'boolean' },
       domain: { type: 'string' },
       poster: { type: 'text' },
       score: { type: 'number' },

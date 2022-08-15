@@ -9,12 +9,13 @@ import redis from '@/redis/client'
 import story from '@/redis/om/story'
 
 interface HackerNewsStoryData {
-  by: string
-  descendants: number
-  score: number
+  by?: string
+  deleted?: boolean
+  descendants?: number
+  score?: number
   text?: string
   time: number
-  title: string
+  title?: string
   url?: string
 }
 
@@ -74,12 +75,12 @@ export const processHNNewStoriesIngestData = async (max?: number) => {
           // map data to object
           newStory.id = id
           newStory.domain = url ? new URL(url).hostname : HN_SOURCE_DOMAIN
-          newStory.poster = by
-          newStory.score = score
+          newStory.poster = by ?? null
+          newStory.score = score ?? null
           newStory.source = HN_SOURCE_DOMAIN
           newStory.text = text ?? null
-          newStory.title = title
-          newStory.comment_total = comment_total
+          newStory.title = title ?? null
+          newStory.comment_total = comment_total ?? null
           newStory.url = url ?? null
           newStory.created = time
 
@@ -141,93 +142,104 @@ export const processHNStoryActivityIngestData = async () => {
     await Promise.all(
       stories.map(async (story) => {
         try {
-          const { score: latestScore, descendants: latestCommentTotal } = (
+          const {
+            deleted,
+            score: latestStoryScore,
+            descendants: latestStoryCommentTotal
+          } = (
             await axios.get<HackerNewsStoryData>(
               HN_API_ENDPOINTS.STORY_BY_ID.replace('{id}', story.id)
             )
           ).data
 
-          // update story with new score and comment total
-          // if this fails, ts data will not ingest
-          if (
-            story.score !== latestScore ||
-            story.comment_total !== latestCommentTotal
-          ) {
-            if (story.score !== latestScore) {
-              story.score = latestScore
-              totalStoriesUpdatedWithLatestScore++
-            }
-
-            if (story.comment_total !== latestCommentTotal) {
-              story.comment_total = latestCommentTotal
-              totalStoriesUpdatedWithLatestCommentTotal++
-            }
-
-            await storyRepository.save(story)
+          if (deleted) {
+            story.deleted = true
+            return
           }
 
-          // add time series commands to time series ingest transaction
-          // https://redis.io/docs/stack/timeseries/quickstart/
-          // https://youtu.be/9JeAu--liMk?t=1737
-          const storyActivityKey = `Story:${story.id}:_activity`,
-            storyActivityTSBaseOptions = {
-              DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.MAX,
-              LABELS: {
-                domain: story.domain || HN_SOURCE_DOMAIN,
-                poster: story.poster,
-                url: story.url || HN_STORY_URL.replace('{id}', story.id)
+          // update story with new score and comment total
+          // if this fails, ts data will not ingest
+          if (latestStoryScore && latestStoryCommentTotal) {
+            if (
+              story.score !== latestStoryScore ||
+              story.comment_total !== latestStoryCommentTotal
+            ) {
+              if (story.score !== latestStoryScore) {
+                story.score = latestStoryScore
+                totalStoriesUpdatedWithLatestScore++
               }
+
+              if (story.comment_total !== latestStoryCommentTotal) {
+                story.comment_total = latestStoryCommentTotal
+                totalStoriesUpdatedWithLatestCommentTotal++
+              }
+
+              await storyRepository.save(story)
             }
 
-          // redis will skip commands if key already exists
-          ingestStoryActivityTSTransaction.ts
-            // will create score activity time series
-            .create(storyActivityKey, {
-              DUPLICATE_POLICY: storyActivityTSBaseOptions.DUPLICATE_POLICY,
-              LABELS: {
-                ...storyActivityTSBaseOptions.LABELS,
-                type: 'score'
+            // add time series commands to time series ingest transaction
+            // https://redis.io/docs/stack/timeseries/quickstart/
+            // https://youtu.be/9JeAu--liMk?t=1737
+            const storyActivityKey = `Story:${story.id}:_activity`,
+              storyActivityTSBaseOptions = {
+                DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.MAX,
+                LABELS: {
+                  domain: story.domain || HN_SOURCE_DOMAIN,
+                  poster: story.poster || 'unknown',
+                  url: story.url || HN_STORY_URL.replace('{id}', story.id)
+                }
               }
-            })
-            // will create score activity time series by day (compacted)
-            .ts.create(`${storyActivityKey}:score_by_day`, {
-              LABELS: {
-                ...storyActivityTSBaseOptions.LABELS,
-                type: 'score'
-              }
-            })
-            .ts.createRule(
-              storyActivityKey,
-              `${storyActivityKey}:score_by_day`,
-              TimeSeriesAggregationType.SUM,
-              86400000
-            )
-            // will add score activity sample
-            .ts.add(storyActivityKey, now, latestScore)
-            // will create comment total activity time series
-            .ts.create(storyActivityKey, {
-              DUPLICATE_POLICY: storyActivityTSBaseOptions.DUPLICATE_POLICY,
-              LABELS: {
-                ...storyActivityTSBaseOptions.LABELS,
-                type: 'comment_total'
-              }
-            })
-            // will create comment total activity time series by day (compacted)
-            .ts.create(`${storyActivityKey}:comment_total_by_day`, {
-              LABELS: {
-                ...storyActivityTSBaseOptions.LABELS,
-                type: 'comment_total'
-              }
-            })
-            // https://redis.io/docs/stack/timeseries/quickstart/#downsampling
-            .ts.createRule(
-              storyActivityKey,
-              `${storyActivityKey}:comment_total_by_day`,
-              TimeSeriesAggregationType.SUM,
-              86400000
-            )
-            // will add comment total activity sample
-            .ts.add(storyActivityKey, now, latestCommentTotal)
+
+            // redis will skip commands if key already exists
+            ingestStoryActivityTSTransaction.ts
+              // will create score activity time series
+              .create(storyActivityKey, {
+                DUPLICATE_POLICY: storyActivityTSBaseOptions.DUPLICATE_POLICY,
+                LABELS: {
+                  ...storyActivityTSBaseOptions.LABELS,
+                  type: 'score'
+                }
+              })
+              // will create score activity time series by day (compacted)
+              .ts.create(`${storyActivityKey}:score_by_day`, {
+                LABELS: {
+                  ...storyActivityTSBaseOptions.LABELS,
+                  type: 'score'
+                }
+              })
+              .ts.createRule(
+                storyActivityKey,
+                `${storyActivityKey}:score_by_day`,
+                TimeSeriesAggregationType.SUM,
+                86400000
+              )
+              // will add score activity sample
+              .ts.add(storyActivityKey, now, latestStoryScore)
+              // will create comment total activity time series
+              .ts.create(storyActivityKey, {
+                DUPLICATE_POLICY: storyActivityTSBaseOptions.DUPLICATE_POLICY,
+                LABELS: {
+                  ...storyActivityTSBaseOptions.LABELS,
+                  type: 'comment_total'
+                }
+              })
+              // will create comment total activity time series by day (compacted)
+              .ts.create(`${storyActivityKey}:comment_total_by_day`, {
+                LABELS: {
+                  ...storyActivityTSBaseOptions.LABELS,
+                  type: 'comment_total'
+                }
+              })
+              // https://redis.io/docs/stack/timeseries/quickstart/#downsampling
+              .ts.createRule(
+                storyActivityKey,
+                `${storyActivityKey}:comment_total_by_day`,
+                TimeSeriesAggregationType.SUM,
+                86400000
+              )
+              // will add comment total activity sample
+              .ts.add(storyActivityKey, now, latestStoryCommentTotal)
+          }
         } catch (error) {
           console.error(error)
 
@@ -244,16 +256,22 @@ export const processHNStoryActivityIngestData = async () => {
 
     // DONE!
     console.info(
-      `${totalStoriesUpdatedWithLatestScore} updated with latest score`
+      `${totalStoriesUpdatedWithLatestScore} stories updated with latest score`
     )
     console.info(
-      `${totalStoriesUpdatedWithLatestCommentTotal} updated with latest comment total`
+      `${totalStoriesUpdatedWithLatestCommentTotal} stories updated with latest comment total`
     )
 
-    // TODO: return
+    return {
+      success: true,
+      data: {
+        totalStoriesUpdatedWithLatestScore,
+        totalStoriesUpdatedWithLatestCommentTotal
+      }
+    }
   } catch (error) {
     console.error(error)
 
-    throw (error as Error).message
+    throw isAxiosError(error) ? error.message : (error as Error).message
   }
 }

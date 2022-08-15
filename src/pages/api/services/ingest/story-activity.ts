@@ -32,11 +32,19 @@ StoryActivityIngestServiceApi.post(async (req, res) => {
       data: { dataSource }
     } = query
 
+    let totalStoriesUpdatedWithLatestScore,
+      totalStoriesUpdatedWithLatestCommentTotal
+
     switch (dataSource) {
       case DATA_SOURCE.HN:
         try {
           // TODO: get data
-          await processHNStoryActivityIngestData()
+          const { data } = await processHNStoryActivityIngestData()
+
+          totalStoriesUpdatedWithLatestScore =
+            data.totalStoriesUpdatedWithLatestScore
+          totalStoriesUpdatedWithLatestCommentTotal =
+            data.totalStoriesUpdatedWithLatestCommentTotal
         } catch (error) {
           console.error(error)
 
@@ -51,7 +59,14 @@ StoryActivityIngestServiceApi.post(async (req, res) => {
     }
 
     // TODO: return data
-    return res.status(HTTP_STATUS_CODE.OK).end(JSON.stringify({ data: null }))
+    return res.status(HTTP_STATUS_CODE.OK).end(
+      JSON.stringify({
+        data: {
+          totalStoriesUpdatedWithLatestScore,
+          totalStoriesUpdatedWithLatestCommentTotal
+        }
+      })
+    )
   }
 
   const { error } = query
