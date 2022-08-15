@@ -9,7 +9,7 @@ interface Story {
   source: string
   text: string | null
   title: string
-  total_comments: number
+  comment_total: number
   url: string | null
   created: number
 }
@@ -26,7 +26,7 @@ const story = async () => {
       source: { type: 'string' },
       text: { type: 'text' },
       title: { type: 'text' },
-      total_comments: { type: 'number' },
+      comment_total: { type: 'number' },
       url: { type: 'string' },
       created: { type: 'date' }
     })

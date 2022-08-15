@@ -55,7 +55,7 @@ export const processHNNewStoriesIngestData = async (max?: number) => {
         try {
           // get story data and story objects
           const [
-            { by, descendants: total_comments, score, text, time, title, url },
+            { by, descendants: comment_total, score, text, time, title, url },
             newStory
           ] = await Promise.all([
             (
@@ -74,7 +74,7 @@ export const processHNNewStoriesIngestData = async (max?: number) => {
           newStory.source = HN_SOURCE_DOMAIN
           newStory.text = text ?? null
           newStory.title = title
-          newStory.total_comments = total_comments
+          newStory.comment_total = comment_total
           newStory.url = url ?? null
           newStory.created = time
 
