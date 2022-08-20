@@ -14,65 +14,78 @@ import { SOURCE_REQUEST_HEADERS } from '..'
 import type { HackerNewsNativeUserData } from '.'
 import { HN_API_ENDPOINTS } from '.'
 
-const processNewUser = async (sourceUserId: string) => {
+const processNewUser = async (nativeSourceUserId: string) => {
   let success = false,
-    sourceUser,
+    nativeSourceUser,
     isNew = true
 
   try {
     console.info(
-      `[INFO:NewUser:${DATA_SOURCE.HN}] requesting user data for "${sourceUserId}"...`
+      `[INFO:NewUser:${DATA_SOURCE.HN}] requesting user data for "${nativeSourceUserId}"...`
     )
 
-    sourceUser = (
-      await axios.get<HackerNewsNativeUserData>(
-        HN_API_ENDPOINTS.USER_BY_ID_NATIVE(sourceUserId),
+    nativeSourceUser = (
+      await axios.get<HackerNewsNativeUserData | null>(
+        HN_API_ENDPOINTS.USER_BY_ID_NATIVE(nativeSourceUserId),
         { headers: { ...SOURCE_REQUEST_HEADERS } }
       )
     ).data
 
+    if (!nativeSourceUser) {
+      throw `[ERROR:NewUser:${DATA_SOURCE.HN}] unable to process new user "${nativeSourceUserId}" from native source; user missing...`
+    }
+
     if (
-      (await redisClient.exists(`User:${DATA_SOURCE.HN}:${sourceUser.id}`)) ===
-      1
+      (await redisClient.exists(
+        `User:${DATA_SOURCE.HN}:${nativeSourceUser.id}`
+      )) === 1
     ) {
       isNew = false
     }
 
     // save new user data
     if (
-      sourceUser &&
-      (await redisClient.exists(`User:${DATA_SOURCE.HN}:${sourceUser.id}`)) ===
-        0
+      nativeSourceUser &&
+      (await redisClient.exists(
+        `User:${DATA_SOURCE.HN}:${nativeSourceUser.id}`
+      )) === 0
     ) {
       const newUser = await userRepository.fetch(
-        `${DATA_SOURCE.HN}:${sourceUser.id}`
+        `${DATA_SOURCE.HN}:${nativeSourceUser.id}`
       )
 
-      newUser.about = sourceUser.about ?? null
+      newUser.about = nativeSourceUser.about ?? null
 
       await Promise.all([
         userRepository.save(newUser),
         redisClient.graph.query(
           `${MEATBALLS_DB_KEY.GRAPH}`,
-          `MERGE (user:User { name: "${sourceUser.id}", created: ${sourceUser.created}, score: ${sourceUser.karma} })`
+          `MERGE (user:User { name: "${nativeSourceUser.id}", created: ${nativeSourceUser.created}, score: ${nativeSourceUser.karma} })`
         )
       ])
 
       console.info(
-        `[INFO:NewUser:${DATA_SOURCE.HN}] saved new user "${sourceUser.id}" to DB...`
+        `[INFO:NewUser:${DATA_SOURCE.HN}] saved new user "${nativeSourceUser.id}" to DB...`
       )
     }
 
     success = true
   } catch (error) {
+    let errorMessage = isAxiosError(error)
+      ? error.message
+      : (error as Error).message
+
+    console.error(
+      `[ERROR:NewUser:${DATA_SOURCE.HN}] nativeSourceUserId: ${nativeSourceUserId}, error: ${errorMessage}`
+    )
     console.error(error)
 
-    throw isAxiosError(error) ? error.message : (error as Error).message
+    throw errorMessage
   } finally {
     return {
       success,
       data: {
-        sourceUser,
+        sourceUser: nativeSourceUser,
         // user already exists in database
         // and may require an update
         // see user activity processor

@@ -6,9 +6,6 @@ import sub from 'date-fns/sub'
 import { DATA_SOURCE, MEATBALLS_DB_KEY } from '@/types/constants'
 
 import { redisClient } from '@/redis/clients'
-import { storyRepository } from '@/redis/om/story'
-import { userRepository } from '@/redis/om/user'
-import { commentRepository } from '@/redis/om/comment'
 
 import { isAxiosError } from '@/utils/api'
 
@@ -42,7 +39,7 @@ const processStoryActivity = async ({
     storiesNotOlderThan = end
       ? end
       : millisecondsToSeconds(
-          getTime(sub(storiesOlderThan * 1000, { minutes: 120 }))
+          getTime(sub(storiesOlderThan * 1000, { minutes: 500 }))
         ),
     storiesWithScoreOrMore = score,
     storiesWithCommentTotalOrMore = commentTotal
@@ -109,24 +106,27 @@ const processStoryActivity = async ({
             if (typeof sourceUserId !== 'string')
               throw `[ERROR:StoryActivity:${DATA_SOURCE.HN}] missing user ID or type not string...`
 
-            const sourceStoryId = storyId.replace(`${DATA_SOURCE.HN}:`, '')
+            const nativeSourceStoryId = storyId.replace(
+              `${DATA_SOURCE.HN}:`,
+              ''
+            )
 
-            await Promise.all([
-              processUserActivity(sourceUserId),
-              processNewComments(sourceStoryId)
-            ])
+            const { data: nativeSourceStory } =
+              await axios.get<HackerNewsNativeStoryData | null>(
+                HN_API_ENDPOINTS.STORY_BY_ID_NATIVE(nativeSourceStoryId),
+                { headers: { ...SOURCE_REQUEST_HEADERS } }
+              )
+
+            if (!nativeSourceStory) {
+              throw `[ERROR:StoryActivity:${DATA_SOURCE.HN}] unable to process story activity from native source story "${nativeSourceStoryId}"; story missing...`
+            }
 
             const {
               dead: latestLocked = false,
               deleted: latestDeleted = false,
               score: latestScore = 0,
               descendants: latestCommentTotal = 0
-            } = (
-              await axios.get<HackerNewsNativeStoryData>(
-                HN_API_ENDPOINTS.STORY_BY_ID_NATIVE(sourceStoryId),
-                { headers: { ...SOURCE_REQUEST_HEADERS } }
-              )
-            ).data
+            } = nativeSourceStory
 
             if (
               (latestDeleted && priorDeleted === 'false') ||
@@ -146,11 +146,11 @@ const processStoryActivity = async ({
                 setClause += `SET s.deleted = ${false} `
               }
 
-              if (latestLocked && latestLocked === 'false') {
+              if (latestLocked && priorLocked === 'false') {
                 setClause += `SET s.locked = ${true} `
               }
 
-              if (!latestLocked && latestLocked === 'true') {
+              if (!latestLocked && priorLocked === 'true') {
                 setClause += `SET s.locked = ${false} `
               }
 
@@ -177,6 +177,20 @@ const processStoryActivity = async ({
                 )
               }
             }
+
+            const shouldProcessNewComments = !latestLocked && !latestDeleted
+
+            if (!shouldProcessNewComments) {
+              console.warn(
+                `[WARN:StoryActivity:${DATA_SOURCE.HN}] will not process new comments for story "${nativeSourceStoryId}"; latestLocked: ${latestLocked}, latestDead: ${latestDeleted}`
+              )
+            }
+
+            await Promise.all([
+              processUserActivity(sourceUserId),
+              shouldProcessNewComments &&
+                processNewComments(nativeSourceStoryId)
+            ])
           }
         )
       )
@@ -332,9 +346,16 @@ const processStoryActivity = async ({
 
     success = true
   } catch (error) {
+    let errorMessage = isAxiosError(error)
+      ? error.message
+      : (error as Error).message
+
+    console.error(
+      `[ERROR:StoryActivity:${DATA_SOURCE.HN}] start: ${start}, end: ${end}, score: ${score}, commentTotal: ${commentTotal}, commentWeight: ${commentWeight}, falloff: ${falloff}, error: ${errorMessage}`
+    )
     console.error(error)
 
-    throw isAxiosError(error) ? error.message : (error as Error).message
+    throw errorMessage
   } finally {
     // DONE!
     // console.info(

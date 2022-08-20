@@ -24,11 +24,11 @@
     "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "containerId": "",
     "name": "Ingest HN New Stories",
-    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn&limit=250",
+    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn&limit=10",
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-08-13T14:27:19.176Z",
-    "modified": "2022-08-20T01:10:37.753Z",
+    "modified": "2022-08-20T16:53:10.849Z",
     "headers": [
       {
         "name": "User-Agent",
@@ -47,7 +47,7 @@
       },
       {
         "name": "limit",
-        "value": "250",
+        "value": "10",
         "isPath": false
       }
     ],
@@ -162,6 +162,26 @@
     "sortNum": 30000,
     "created": "2022-08-17T13:58:20.829Z",
     "modified": "2022-08-17T14:21:25.351Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "print",
+        "value": "pretty",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "715c9e9a-579c-48b0-8067-934e8c6a14eb",
+    "colId": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
+    "containerId": "",
+    "name": "Get Story by ID (Dead)",
+    "url": "https://hacker-news.firebaseio.com/v0/item/32531482.json?print=pretty",
+    "method": "GET",
+    "sortNum": 25000,
+    "created": "2022-08-20T16:43:11.400Z",
+    "modified": "2022-08-20T16:43:15.293Z",
     "headers": [],
     "params": [
       {

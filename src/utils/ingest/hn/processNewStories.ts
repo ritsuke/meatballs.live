@@ -28,53 +28,63 @@ const processNewStories = async (limit?: number) => {
 
     // get newest story IDs from HN API and trim to limit
     // i.e. we don't always want to process 500 stories
-    const newStoriesById = (
-        await axios.get<string[]>(HN_API_ENDPOINTS.NEW_STORIES_NATIVE, {
-          headers: { ...SOURCE_REQUEST_HEADERS }
-        })
-      ).data,
-      newStoriesByIdTrimmedToLimit = [
-        ...newStoriesById.slice(0, limit || newStoriesById.length)
+    const newNativeSourceStoriesById = (
+      await axios.get<string[] | null>(HN_API_ENDPOINTS.NEW_STORIES_NATIVE, {
+        headers: { ...SOURCE_REQUEST_HEADERS }
+      })
+    ).data
+
+    if (!newNativeSourceStoriesById) {
+      throw `[ERROR:NewStories:${DATA_SOURCE.HN}] unable to process new stories from native source; stories missing...`
+    }
+
+    const newNativeSourceStoriesByIdTrimmedToLimit = [
+        ...newNativeSourceStoriesById.slice(
+          0,
+          limit || newNativeSourceStoriesById.length
+        )
       ],
-      newStoriesToSaveToDb = await getKeysToSave(
-        newStoriesByIdTrimmedToLimit,
+      newNativeSourceStoriesToSaveToDb = await getKeysToSave(
+        newNativeSourceStoriesByIdTrimmedToLimit,
         'Story'
       )
 
     // save new stories to db
     await Promise.all(
-      newStoriesToSaveToDb.map(async (storyId) => {
+      newNativeSourceStoriesToSaveToDb.map(async (nativeStoryId) => {
         try {
           console.info(
-            `[INFO:NewStories:${DATA_SOURCE.HN}] requesting story data for "${storyId}"...`
+            `[INFO:NewStories:${DATA_SOURCE.HN}] requesting story data for "${nativeStoryId}"...`
           )
 
           // get story data and story objects
-          const [
-            {
+          const { data: nativeSourceStory } =
+            await axios.get<HackerNewsNativeStoryData | null>(
+              HN_API_ENDPOINTS.STORY_BY_ID_NATIVE(nativeStoryId),
+              { headers: { ...SOURCE_REQUEST_HEADERS } }
+            )
+
+          if (!nativeSourceStory) {
+            throw `[ERROR:NewStories:${DATA_SOURCE.HN}] unable to process new story from native source story "${nativeStoryId}"; story missing...`
+          }
+
+          const {
               by: nativeUserId,
               dead,
               deleted,
               descendants: comment_total,
               score: storyScore,
-              text,
+              text: content,
               time: created,
               title,
               url
-            },
-            newStory
-          ] = await Promise.all([
-            (
-              await axios.get<HackerNewsNativeStoryData>(
-                HN_API_ENDPOINTS.STORY_BY_ID_NATIVE(storyId),
-                { headers: { ...SOURCE_REQUEST_HEADERS } }
-              )
-            ).data,
-            await storyRepository.fetch(`${DATA_SOURCE.HN}:${storyId}`)
-          ])
+            } = nativeSourceStory,
+            newStory = await storyRepository.fetch(
+              `${DATA_SOURCE.HN}:${nativeStoryId}`
+            )
 
           // map data to object
-          newStory.text = text ?? null
+          newStory.content = content ?? null
           newStory.title = title ?? null
 
           // get source user data to relate in graph
@@ -84,12 +94,15 @@ const processNewStories = async (limit?: number) => {
             // user activity processor will create a new user if none exists
             const {
               success,
-              data: { updatedUser: sourceUser }
+              data: { updatedUser: sourceUser, isNew: sourceUserIsNew }
             } = await processUserActivity(nativeUserId)
 
             if (success) {
               foundSourceUser = sourceUser
-              totalNewUsersSaved++
+
+              if (sourceUser && sourceUserIsNew) {
+                totalNewUsersSaved++
+              }
             }
           }
 
@@ -113,7 +126,7 @@ const processNewStories = async (limit?: number) => {
               }
               
               MERGE (story:Story {
-                name: "${DATA_SOURCE.HN}:${storyId}",
+                name: "${DATA_SOURCE.HN}:${nativeStoryId}",
                 comment_total: ${comment_total ?? 0},
                 created: ${created}, // seconds
                 locked: ${dead ?? false},
@@ -151,7 +164,7 @@ const processNewStories = async (limit?: number) => {
           ])
 
           console.info(
-            `[INFO:NewStories:${DATA_SOURCE.HN}] saved new story "${storyId}" to DB...`
+            `[INFO:NewStories:${DATA_SOURCE.HN}] saved new story "${nativeStoryId}" to DB...`
           )
         } catch (error) {
           console.error(error)
@@ -161,13 +174,20 @@ const processNewStories = async (limit?: number) => {
       })
     )
 
-    totalNewStoriesSaved = newStoriesToSaveToDb.length
+    totalNewStoriesSaved = newNativeSourceStoriesToSaveToDb.length
 
     success = true
   } catch (error) {
+    let errorMessage = isAxiosError(error)
+      ? error.message
+      : (error as Error).message
+
+    console.error(
+      `[ERROR:NewStories:${DATA_SOURCE.HN}] limit: ${limit}, error: ${errorMessage}`
+    )
     console.error(error)
 
-    throw isAxiosError(error) ? error.message : (error as Error).message
+    throw errorMessage
   } finally {
     console.info(
       `[INFO:NewStories:${DATA_SOURCE.HN}] saved ${totalNewStoriesSaved} new stories to DB...`

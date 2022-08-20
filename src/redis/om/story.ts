@@ -3,14 +3,14 @@ import { Entity, Schema } from 'redis-om'
 import { redisOmClient } from '../clients'
 
 export interface Story {
-  text: string | null
+  content: string | null
   title: string | null
 }
 
 export class Story extends Entity {}
 
 const storySchema = new Schema(Story, {
-  text: { type: 'text' },
+  content: { type: 'text' },
   title: { type: 'text' }
 })
 

@@ -16,25 +16,36 @@ import type { HackerNewsNativeCommentData } from '.'
 import { HN_API_ENDPOINTS } from '.'
 import { processUserActivity, flattenComments } from '.'
 
-const processNewComments = async (nativeStoryId: string) => {
+const processNewComments = async (nativeSourceStoryId: string) => {
   let success = false
 
   try {
     console.info(
-      `[INFO:NewComments:${DATA_SOURCE.HN}] requesting comments for story "${nativeStoryId}" with user agent "${SOURCE_USER_AGENT}"...`
+      `[INFO:NewComments:${DATA_SOURCE.HN}] requesting comments for native source story "${nativeSourceStoryId}" with user agent "${SOURCE_USER_AGENT}"...`
     )
 
-    const { children: newComments } = (
-      await axios.get<{
-        children: Array<HackerNewsNativeCommentData>
-      }>(HN_API_ENDPOINTS.STORY_BY_ID_ALGOLIA(nativeStoryId), {
-        headers: { ...SOURCE_REQUEST_HEADERS }
-      })
-    ).data
+    const { data: algoliaSourceStory } = await axios.get<{
+      children: Array<HackerNewsNativeCommentData>
+    } | null>(HN_API_ENDPOINTS.STORY_BY_ID_ALGOLIA(nativeSourceStoryId), {
+      headers: { ...SOURCE_REQUEST_HEADERS }
+    })
+
+    if (!algoliaSourceStory) {
+      throw `[ERROR:NewComments:${DATA_SOURCE.HN}] unable to process new comments from algolia from native source story "${nativeSourceStoryId}"; story missing...`
+    }
+
+    const { children: newComments } = algoliaSourceStory
 
     let newCommentsFlat = flattenComments(newComments),
       newCommentsToSaveToDb: string[] = await getKeysToSave(
-        newCommentsFlat.map((comment) => comment.id),
+        newCommentsFlat.map((comment) => {
+          if (comment.id === undefined) {
+            console.error(comment)
+            throw `[ERROR:NewComments:${DATA_SOURCE.HN}] unable to get key to save; missing comment ID...`
+          }
+
+          return comment.id
+        }),
         'Comment'
       )
 
@@ -49,18 +60,22 @@ const processNewComments = async (nativeStoryId: string) => {
             created_at_i: created,
             deleted,
             parent_id,
-            text
+            text: content
           } = newCommentsFlat[index],
           newComment = await commentRepository.fetch(
             `${DATA_SOURCE.HN}:${commentId}`
           )
+
+        if (user === undefined) {
+          throw `[ERROR:NewComments:${DATA_SOURCE.HN}] unable to process user activity; missing user ID...`
+        }
 
         // save or update user
         const {
           data: { updatedUser }
         } = await processUserActivity(user)
 
-        newComment.text = text ?? null
+        newComment.content = content ?? null
 
         // save JSON
         await commentRepository.save(newComment)
@@ -88,14 +103,27 @@ const processNewComments = async (nativeStoryId: string) => {
 
     success = true
   } catch (error) {
+    let errorMessage = isAxiosError(error)
+      ? error.message
+      : (error as Error).message
+
+    console.error(
+      `[ERROR:NewComments:${DATA_SOURCE.HN}] nativeSourceStoryId: ${nativeSourceStoryId}, error: ${errorMessage}`
+    )
+    console.error(error)
+
     if (
       isAxiosError(error) &&
-      error.status === `${HTTP_STATUS_CODE.NOT_FOUND}`
+      error.response?.status === HTTP_STATUS_CODE.NOT_FOUND
     ) {
       console.warn(
-        `[WARN:StoryActivity:${DATA_SOURCE.HN}] story "${nativeStoryId}" has not propagated; skipping comments...`
+        `[WARN:NewComments:${DATA_SOURCE.HN}] story "${nativeSourceStoryId}" has not propagated or is locked or deleted; skipping comments...`
       )
+
+      return
     }
+
+    throw errorMessage
   } finally {
     return {
       success,

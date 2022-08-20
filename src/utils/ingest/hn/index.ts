@@ -4,12 +4,14 @@ import processNewUser from './processNewUser'
 import processUserActivity from './processUserActivity'
 import processNewComments from './processNewComments'
 
+// assume that any props can change by the source provider
+// hence are optional and must be checked
 export interface HackerNewsNativeStoryData {
   by?: string
-  dead?: string // locked
+  dead?: boolean // locked
   deleted?: boolean
   descendants?: number
-  id: string
+  id?: string
   score?: number
   text?: string
   time: number
@@ -19,20 +21,20 @@ export interface HackerNewsNativeStoryData {
 
 export interface HackerNewsNativeUserData {
   about?: string
-  created: number
-  id: string
-  karma: number
+  created?: number
+  id?: string
+  karma?: number
 }
 
 export interface HackerNewsNativeCommentData {
-  author: string
-  children: Array<HackerNewsNativeCommentData>
-  created_at_i: number
+  author?: string
+  children?: Array<HackerNewsNativeCommentData>
+  created_at_i?: number
   deleted?: boolean
-  id: string
-  parent_id: string
-  story_id: string
-  text: string
+  id?: string
+  parent_id?: string
+  story_id?: string
+  text?: string
 }
 
 const HN_API_ENDPOINTS = {
