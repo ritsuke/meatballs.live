@@ -3,6 +3,13 @@ export enum DATA_SOURCE {
   REDDIT = 'reddit'
 }
 
+export enum MEATBALLS_DB_KEY {
+  ACTIVITY = '_activity',
+  LOGS = '_logs',
+  GRAPH = '_meatballs',
+  SEARCH = '_search'
+}
+
 export enum HTTP_METHOD {
   CONNECT = 'CONNECT',
   DELETE = 'DELETE',

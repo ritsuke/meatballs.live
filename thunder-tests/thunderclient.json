@@ -24,12 +24,16 @@
     "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "containerId": "",
     "name": "Ingest HN New Stories",
-    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn",
+    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn&limit=250",
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-08-13T14:27:19.176Z",
-    "modified": "2022-08-15T19:00:58.124Z",
+    "modified": "2022-08-20T01:10:37.753Z",
     "headers": [
+      {
+        "name": "User-Agent",
+        "value": "ritsuke.dev"
+      },
       {
         "name": "Authorization",
         "value": "Bearer {{INGEST_API_KEY}}"
@@ -42,9 +46,8 @@
         "isPath": false
       },
       {
-        "name": "max",
-        "value": "10",
-        "isDisabled": true,
+        "name": "limit",
+        "value": "250",
         "isPath": false
       }
     ],
@@ -55,11 +58,11 @@
     "colId": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
     "containerId": "",
     "name": "Get Story by ID",
-    "url": "https://hacker-news.firebaseio.com/v0/item/32471553.json?print=pretty",
+    "url": "https://hacker-news.firebaseio.com/v0/item/32494497.json?print=pretty",
     "method": "GET",
     "sortNum": 20000,
     "created": "2022-08-13T22:12:47.806Z",
-    "modified": "2022-08-15T17:30:52.395Z",
+    "modified": "2022-08-17T13:09:39.723Z",
     "headers": [],
     "params": [
       {
@@ -79,8 +82,12 @@
     "method": "POST",
     "sortNum": 20000,
     "created": "2022-08-14T20:18:02.787Z",
-    "modified": "2022-08-14T20:19:41.335Z",
+    "modified": "2022-08-19T14:19:23.769Z",
     "headers": [
+      {
+        "name": "User-Agent",
+        "value": "Thunder Client (localhost)"
+      },
       {
         "name": "Authorization",
         "value": "Bearer {{INGEST_API_KEY}}"
@@ -90,6 +97,76 @@
       {
         "name": "dataSource",
         "value": "hn",
+        "isPath": false
+      },
+      {
+        "name": "start",
+        "value": "",
+        "isDisabled": true,
+        "isPath": false
+      },
+      {
+        "name": "end",
+        "value": "",
+        "isDisabled": true,
+        "isPath": false
+      },
+      {
+        "name": "score",
+        "value": "2",
+        "isDisabled": true,
+        "isPath": false
+      },
+      {
+        "name": "commentTotal",
+        "value": "",
+        "isDisabled": true,
+        "isPath": false
+      },
+      {
+        "name": "commentWeight",
+        "value": "-20",
+        "isDisabled": true,
+        "isPath": false
+      },
+      {
+        "name": "falloff",
+        "value": "-50",
+        "isDisabled": true,
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "69f0eb4f-a617-4b06-87fa-75adc06e89e6",
+    "colId": "b20d938c-c76e-4b89-b187-734a035f4a3d",
+    "containerId": "",
+    "name": "Get Story by ID",
+    "url": "https://hn.algolia.com/api/v1/items/32495924",
+    "method": "GET",
+    "sortNum": 10000,
+    "created": "2022-08-17T13:08:53.224Z",
+    "modified": "2022-08-17T13:19:13.160Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "525a548d-e193-4141-89b0-201cccd9aad2",
+    "colId": "2cc97137-3178-4c6e-9e5b-e7b49a064e60",
+    "containerId": "",
+    "name": "Get User by ID",
+    "url": "https://hacker-news.firebaseio.com/v0/user/ritsuke.json?print=pretty",
+    "method": "GET",
+    "sortNum": 30000,
+    "created": "2022-08-17T13:58:20.829Z",
+    "modified": "2022-08-17T14:21:25.351Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "print",
+        "value": "pretty",
         "isPath": false
       }
     ],

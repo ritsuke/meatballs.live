@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { z } from 'zod'
 
 import type { AxiosError } from 'axios'
 import { type NextApiRequest, NextApiResponse } from 'next'
@@ -28,3 +29,16 @@ export const preprocessAuthHeader = (value: unknown) =>
   typeof value === 'string'
     ? value.replace(/"/g, '').replace('Bearer ', '')
     : undefined
+
+export const apiParamPositiveIntPreprocessor = (options?: {
+  min?: number
+  max?: number
+}) => {
+  const { min = 0, max } = options || { min: 0 },
+    schemaBase = z.number().int().nonnegative()
+
+  return z.preprocess(
+    (value) => parseInt(value as string),
+    typeof max === 'number' ? schemaBase.gte(min).lte(max) : schemaBase.gte(min)
+  )
+}

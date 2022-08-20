@@ -4,9 +4,13 @@ import { z } from 'zod'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { DATA_SOURCE, HTTP_STATUS_CODE } from '@/types/constants'
 
-import { onError, onNoMatch } from '@/utils/api'
-import { processHNNewStoriesIngestData } from '@/utils/ingest/processors'
+import {
+  apiParamPositiveIntPreprocessor,
+  onError,
+  onNoMatch
+} from '@/utils/api'
 import { ingestAuthApiMiddleware } from '@/utils/ingest/middleware'
+import { processNewStories } from '@/utils/ingest/hn'
 
 const NewStoriesIngestServiceApi = nextConnect<NextApiRequest, NextApiResponse>(
   {
@@ -19,7 +23,7 @@ const NewStoriesIngestServiceApiQuery = z.object({
   dataSource: z.nativeEnum(DATA_SOURCE, {
     required_error: 'Data source is required.'
   }),
-  max: z.preprocess((value) => parseInt(value as string), z.number()).optional()
+  limit: apiParamPositiveIntPreprocessor().optional()
 })
 
 NewStoriesIngestServiceApi.use(ingestAuthApiMiddleware)
@@ -29,21 +33,24 @@ NewStoriesIngestServiceApi.post(async (req, res) => {
 
   if (query.success) {
     const {
-      data: { dataSource, max }
+      data: { dataSource, limit }
     } = query
 
-    let totalStoriesSaved = 0
+    let totalNewStoriesSaved = 0,
+      totalNewUsersSaved = 0
 
     switch (dataSource) {
       case DATA_SOURCE.HN:
         try {
-          const { data } = await processHNNewStoriesIngestData(max)
+          const { data } = await processNewStories(limit)
 
-          totalStoriesSaved = data.total
+          totalNewStoriesSaved = data.totalNewStoriesSaved
+          totalNewUsersSaved = data.totalNewUsersSaved
         } catch (error) {
           console.error(error)
 
           return res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).end()
+        } finally {
         }
 
         break
@@ -53,9 +60,15 @@ NewStoriesIngestServiceApi.post(async (req, res) => {
           .end(`'${dataSource}' is not implemented.`)
     }
 
-    return res
-      .status(HTTP_STATUS_CODE.OK)
-      .end(JSON.stringify({ data: { totalStoriesSaved } }))
+    return res.status(HTTP_STATUS_CODE.OK).end(
+      JSON.stringify({
+        success: true,
+        data: {
+          new_stories_saved: totalNewStoriesSaved,
+          new_users_saved: totalNewUsersSaved
+        }
+      })
+    )
   }
 
   const { error } = query

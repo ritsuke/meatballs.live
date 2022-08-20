@@ -10,7 +10,14 @@
     "_id": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "colName": "meatballs.live (dev)",
     "created": "2022-08-13T14:24:56.156Z",
-    "sortNum": 20000,
+    "sortNum": 5000,
+    "folders": []
+  },
+  {
+    "_id": "b20d938c-c76e-4b89-b187-734a035f4a3d",
+    "colName": "HN Algolia API",
+    "created": "2022-08-17T13:08:34.336Z",
+    "sortNum": 15000,
     "folders": []
   }
 ]
