@@ -5,6 +5,7 @@ export enum DATA_SOURCE {
 
 export enum MEATBALLS_DB_KEY {
   ACTIVITY = '_activity',
+  ACTIVITY_TYPE = 'weighted',
   LOGS = '_logs',
   GRAPH = '_meatballs',
   SEARCH = '_search'

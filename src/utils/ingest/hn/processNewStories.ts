@@ -8,15 +8,22 @@ import { storyRepository } from '@/redis/om/story'
 import { isAxiosError } from '@/utils/api'
 
 import { getKeysToSave, SOURCE_REQUEST_HEADERS } from '..'
-import type { HackerNewsNativeStoryData } from '.'
+import {
+  getStoryActivityTimeSeriesKey,
+  getStoryActivityTimeSeriesSampleValue,
+  HackerNewsNativeStoryData
+} from '.'
 import { HN_API_ENDPOINTS, HN_SOURCE_DOMAIN } from '.'
 import { processUserActivity } from '.'
+import { TimeSeriesAggregationType, TimeSeriesDuplicatePolicies } from 'redis'
 
 // param(s) describe boundaries
 // e.g. process latest 10 stories out of 500 returned from HN
 // TODO: abstract when additional data sources are introduced
 // benchmark: ~1-2.5s (limit=10)
 const processNewStories = async (limit?: number) => {
+  const now = Date.now()
+
   let success = false,
     totalNewStoriesSaved = 0,
     totalNewUsersSaved = 0
@@ -72,7 +79,7 @@ const processNewStories = async (limit?: number) => {
               by: nativeUserId,
               dead,
               deleted,
-              descendants: comment_total,
+              descendants: commentTotal,
               score: storyScore,
               text: content,
               time: created,
@@ -106,7 +113,83 @@ const processNewStories = async (limit?: number) => {
             }
           }
 
+          const formattedDomainName = url
+            ? new URL(url).hostname.replace('www.', '')
+            : HN_SOURCE_DOMAIN
+
+          let storyActivityTimeSeriesTransaction
+
+          if (foundSourceUser?.id) {
+            // https://redis.io/docs/manual/transactions/
+            // https://redis.io/docs/stack/timeseries/quickstart/
+            // https://youtu.be/9JeAu--liMk?t=1737
+            storyActivityTimeSeriesTransaction = redisClient.multi()
+
+            const storyActivityTimeSeriesBaseKey =
+                getStoryActivityTimeSeriesKey(
+                  `${DATA_SOURCE.HN}:${nativeStoryId}`
+                ),
+              storyActivityTimeSeriesTypeKeyAppend = `${MEATBALLS_DB_KEY.ACTIVITY_TYPE}`,
+              storyActivityTimeSeriesBaseOptions = {
+                DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.MAX,
+                LABELS: {
+                  domain: formattedDomainName,
+                  user: foundSourceUser.id,
+                  type: MEATBALLS_DB_KEY.ACTIVITY_TYPE
+                }
+              }
+
+            // not necessary to check the latter if the former exists
+            const [
+              baseStoryActivityTimesSeriesExists,
+              compactedStoryActivityTimeSeriesExists
+            ] = await Promise.all([
+              redisClient.exists(
+                `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`
+              ),
+              redisClient.exists(
+                `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:day`
+              )
+            ])
+
+            if (baseStoryActivityTimesSeriesExists === 0) {
+              storyActivityTimeSeriesTransaction.ts.create(
+                `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
+                {
+                  ...storyActivityTimeSeriesBaseOptions
+                }
+              )
+            }
+
+            if (compactedStoryActivityTimeSeriesExists === 0) {
+              storyActivityTimeSeriesTransaction.ts
+                .create(
+                  `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:day`,
+                  {
+                    ...storyActivityTimeSeriesBaseOptions
+                  }
+                )
+                .ts.createRule(
+                  `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
+                  `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:day`,
+                  TimeSeriesAggregationType.SUM,
+                  86400000
+                )
+            }
+
+            storyActivityTimeSeriesTransaction.ts.add(
+              `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
+              now,
+              getStoryActivityTimeSeriesSampleValue({
+                score: storyScore || 0,
+                commentTotal: commentTotal || 0
+              })
+            )
+          }
+
           await Promise.all([
+            // save initial time series data
+            storyActivityTimeSeriesTransaction?.exec(),
             // save object to JSON
             storyRepository.save(newStory),
             // save data to graph
@@ -127,7 +210,7 @@ const processNewStories = async (limit?: number) => {
               
               MERGE (story:Story {
                 name: "${DATA_SOURCE.HN}:${nativeStoryId}",
-                comment_total: ${comment_total ?? 0},
+                comment_total: ${commentTotal ?? 0},
                 created: ${created}, // seconds
                 locked: ${dead ?? false},
                 deleted: ${deleted ?? false},
@@ -139,11 +222,7 @@ const processNewStories = async (limit?: number) => {
               })
 
               MERGE (url:Url {
-                name: "${
-                  url
-                    ? new URL(url).hostname.replace('www.', '')
-                    : HN_SOURCE_DOMAIN
-                }",
+                name: "${formattedDomainName}",
                 address: "${url}"
               })
 

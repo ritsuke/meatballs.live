@@ -93,7 +93,7 @@ const processNewComments = async (nativeSourceStoryId: string) => {
             deleted: ${deleted ?? false}
           })
 
-          MERGE (parent)-[:CONTAINS]->(comment)-[:REACTION_TO]->(parent)
+          MERGE (parent)-[:PROVOKES]->(comment)-[:REACTION_TO]->(parent)
           MERGE (user)-[:CREATED]->(comment)-[:CREATED_BY]->(user)
           RETURN comment
           `
@@ -110,7 +110,6 @@ const processNewComments = async (nativeSourceStoryId: string) => {
     console.error(
       `[ERROR:NewComments:${DATA_SOURCE.HN}] nativeSourceStoryId: ${nativeSourceStoryId}, error: ${errorMessage}`
     )
-    console.error(error)
 
     if (
       isAxiosError(error) &&
@@ -122,6 +121,8 @@ const processNewComments = async (nativeSourceStoryId: string) => {
 
       return
     }
+
+    console.error(error)
 
     throw errorMessage
   } finally {

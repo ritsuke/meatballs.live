@@ -1,3 +1,5 @@
+import { MEATBALLS_DB_KEY } from '@/types/constants'
+
 import processNewStories from './processNewStories'
 import processStoryActivity from './processStoryActivity'
 import processNewUser from './processNewUser'
@@ -59,12 +61,43 @@ const flattenComments = (
       : comment
   )
 
+const getStoryActivityTimeSeriesKey = (
+  storyId: string,
+  withType: boolean = false
+) =>
+  `Story:${storyId}:${MEATBALLS_DB_KEY.ACTIVITY}${
+    withType ? `:${MEATBALLS_DB_KEY.ACTIVITY_TYPE}` : ''
+  }`
+
+const getStoryActivityTimeSeriesSampleValue = ({
+  score,
+  commentTotal,
+  commentWeight,
+  falloff
+}: {
+  score: number
+  commentTotal: number
+  commentWeight?: number // 1-100x
+  falloff?: number // 1-100%
+}) => {
+  console.info(
+    `[INFO:getStoryActivityTimeSeriesSampleValue] score: ${score}, commentTotal: ${commentTotal}, commentWeight: ${commentWeight}, falloff: ${falloff}`
+  )
+
+  return (
+    (score + commentTotal * (commentWeight !== undefined ? commentWeight : 1)) *
+    (falloff !== undefined ? (100 - falloff) / 100 : 1)
+  )
+}
+
 export {
   HN_API_ENDPOINTS,
   HN_SOURCE_DOMAIN,
   HN_STORY_URL,
   HN_USER_URL,
   flattenComments,
+  getStoryActivityTimeSeriesKey,
+  getStoryActivityTimeSeriesSampleValue,
   processNewStories,
   processStoryActivity,
   processNewUser,
