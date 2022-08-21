@@ -17,11 +17,13 @@ import {
 } from '.'
 import { HN_API_ENDPOINTS } from '.'
 import { processUserActivity, processNewComments } from '.'
+import { hoursToMilliseconds } from 'date-fns'
 
 // param(s) describe boundaries
 // e.g. only stories that are 6-12 hours old
 // and have a score > 50 and commentTotal > 3
 // TODO: support arbitrary query hosted elsewhere
+// TODO: use zod to validate incoming values
 // benchmark: ~5s
 const processStoryActivity = async ({
   start,
@@ -31,8 +33,8 @@ const processStoryActivity = async ({
   commentWeight,
   falloff
 }: {
-  start?: number // UNIX time (seconds); default now
-  end?: number // UNIX time (seconds); default 5 min ago
+  start?: number // story age in hours (e.g. 1 hour old; default: now)...
+  end?: number // ...to story age in hours (e.g. to 2 hours old; default: to 5 min old)
   score?: number // default 0
   commentTotal?: number // default 0,
   commentWeight?: number // 1-100x
@@ -41,12 +43,16 @@ const processStoryActivity = async ({
   const now = Date.now()
 
   // sanitize our boundaries
-  let storiesOlderThan = start ? start : millisecondsToSeconds(now),
-    storiesNotOlderThan = end
-      ? end
-      : millisecondsToSeconds(
-          getTime(sub(storiesOlderThan * 1000, { minutes: 60 }))
-        ),
+  let storiesOlderThan =
+      start !== undefined
+        ? millisecondsToSeconds(now - hoursToMilliseconds(start))
+        : millisecondsToSeconds(now),
+    storiesNotOlderThan =
+      end !== undefined
+        ? millisecondsToSeconds(now - hoursToMilliseconds(end))
+        : millisecondsToSeconds(
+            getTime(sub(storiesOlderThan * 1000, { minutes: 5 }))
+          ),
     storiesWithScoreOrMore = score,
     storiesWithCommentTotalOrMore = commentTotal
 
@@ -55,8 +61,8 @@ const processStoryActivity = async ({
   )
   console.info(`[INFO:StoryActivity:${DATA_SOURCE.HN}] search bounds:`)
   console.table([
-    { name: 'start <=', value: storiesOlderThan },
-    { name: 'end >=', value: storiesNotOlderThan },
+    { name: 'start <', value: storiesOlderThan },
+    { name: 'end >', value: storiesNotOlderThan },
     { name: 'score >=', value: storiesWithScoreOrMore },
     { name: 'commentTotal >=', value: storiesWithCommentTotalOrMore }
   ])
@@ -77,7 +83,7 @@ const processStoryActivity = async ({
           `${MEATBALLS_DB_KEY.GRAPH}`,
           `
           MATCH (url:Url)<--(s:Story)-->(u:User)
-          WHERE s.created <= ${storiesOlderThan} AND s.created >= ${storiesNotOlderThan} AND s.score >= ${storiesWithScoreOrMore} AND s.comment_total >= ${storiesWithCommentTotalOrMore}
+          WHERE s.created < ${storiesOlderThan} AND s.created > ${storiesNotOlderThan} AND s.score >= ${storiesWithScoreOrMore} AND s.comment_total >= ${storiesWithCommentTotalOrMore}
           RETURN s.name, s.deleted, s.locked, s.score, s.comment_total, url.name, u.name
           `
         )

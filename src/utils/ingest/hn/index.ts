@@ -84,10 +84,17 @@ const getStoryActivityTimeSeriesSampleValue = ({
     `[INFO:getStoryActivityTimeSeriesSampleValue] score: ${score}, commentTotal: ${commentTotal}, commentWeight: ${commentWeight}, falloff: ${falloff}`
   )
 
-  return (
-    (score + commentTotal * (commentWeight !== undefined ? commentWeight : 1)) *
-    (falloff !== undefined ? (100 - falloff) / 100 : 1)
+  const weightedValue = Math.round(
+    (score + commentTotal) *
+      (commentWeight !== undefined ? commentWeight : 1) *
+      (falloff !== undefined ? (100 - falloff) / 100 : 1)
   )
+
+  console.info(
+    `[INFO:getStoryActivityTimeSeriesSampleValue] weighted value: ${weightedValue}`
+  )
+
+  return weightedValue
 }
 
 export {

@@ -24,11 +24,11 @@
     "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "containerId": "",
     "name": "Ingest HN New Stories",
-    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn&limit=10",
+    "url": "localhost:3000/api/services/ingest/new-stories?dataSource=hn",
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-08-13T14:27:19.176Z",
-    "modified": "2022-08-21T03:29:36.604Z",
+    "modified": "2022-08-21T21:15:26.228Z",
     "headers": [
       {
         "name": "User-Agent",
@@ -47,7 +47,8 @@
       },
       {
         "name": "limit",
-        "value": "10",
+        "value": "50",
+        "isDisabled": true,
         "isPath": false
       }
     ],
@@ -78,11 +79,11 @@
     "colId": "2695abd2-d4aa-468c-a423-dc1dd57e5339",
     "containerId": "",
     "name": "Ingest HN Story Activity",
-    "url": "localhost:3000/api/services/ingest/story-activity?dataSource=hn",
+    "url": "localhost:3000/api/services/ingest/story-activity?dataSource=hn&start=0&end=1&commentWeight=10&falloff=2",
     "method": "POST",
     "sortNum": 20000,
     "created": "2022-08-14T20:18:02.787Z",
-    "modified": "2022-08-19T14:19:23.769Z",
+    "modified": "2022-08-21T17:11:03.240Z",
     "headers": [
       {
         "name": "User-Agent",
@@ -101,19 +102,17 @@
       },
       {
         "name": "start",
-        "value": "",
-        "isDisabled": true,
+        "value": "0",
         "isPath": false
       },
       {
         "name": "end",
-        "value": "",
-        "isDisabled": true,
+        "value": "1",
         "isPath": false
       },
       {
         "name": "score",
-        "value": "2",
+        "value": "",
         "isDisabled": true,
         "isPath": false
       },
@@ -125,14 +124,12 @@
       },
       {
         "name": "commentWeight",
-        "value": "-20",
-        "isDisabled": true,
+        "value": "10",
         "isPath": false
       },
       {
         "name": "falloff",
-        "value": "-50",
-        "isDisabled": true,
+        "value": "2",
         "isPath": false
       }
     ],

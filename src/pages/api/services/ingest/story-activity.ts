@@ -53,8 +53,6 @@ StoryActivityIngestServiceApi.post(async (req, res) => {
     let totalStoriesUpdatedWithLatestScore,
       totalStoriesUpdatedWithLatestCommentTotal
 
-    let redisClient
-
     switch (dataSource) {
       case DATA_SOURCE.HN:
         try {
@@ -68,8 +66,6 @@ StoryActivityIngestServiceApi.post(async (req, res) => {
             falloff
           })
 
-          // redisClient = (await import('@/redis/clients')).redisClient
-
           totalStoriesUpdatedWithLatestScore =
             data.totalStoriesUpdatedWithLatestScore
           totalStoriesUpdatedWithLatestCommentTotal =
@@ -79,7 +75,6 @@ StoryActivityIngestServiceApi.post(async (req, res) => {
 
           return res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).end()
         } finally {
-          // redisClient?.disconnect()
         }
 
         break
