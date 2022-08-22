@@ -135,6 +135,7 @@ const processNewStories = async (limit?: number) => {
                 DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.MAX,
                 LABELS: {
                   domain: formattedDomainName,
+                  story: nativeStoryId,
                   user: foundSourceUser.id,
                   type: MEATBALLS_DB_KEY.ACTIVITY_TYPE
                 }
