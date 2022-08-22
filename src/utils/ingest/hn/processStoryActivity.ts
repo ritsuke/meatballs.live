@@ -26,8 +26,8 @@ import { processUserActivity, processNewComments } from '.'
 // TODO: use zod to validate incoming values
 // benchmark: ~5s
 const processStoryActivity = async ({
-  start,
-  end,
+  start = 0,
+  end = 0,
   score = 0,
   commentTotal = 0,
   commentWeight,
@@ -50,7 +50,7 @@ const processStoryActivity = async ({
     storiesNotOlderThan =
       end !== undefined
         ? millisecondsToSeconds(
-            getTime(sub(storiesOlderThan * 1000, { hours: end }))
+            getTime(sub(storiesOlderThan * 1000, { hours: end - start }))
           )
         : millisecondsToSeconds(
             getTime(sub(storiesOlderThan * 1000, { minutes: 5 }))
