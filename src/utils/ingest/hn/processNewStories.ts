@@ -37,7 +37,7 @@ const processNewStories = async (limit?: number) => {
     // get newest story IDs from HN API and trim to limit
     // i.e. we don't always want to process 500 stories
     const newNativeSourceStoriesById = (
-      await axios.get<string[] | null>(HN_API_ENDPOINTS.NEW_STORIES_NATIVE, {
+      await axios.get<number[] | null>(HN_API_ENDPOINTS.NEW_STORIES_NATIVE, {
         headers: { ...SOURCE_REQUEST_HEADERS }
       })
     ).data
@@ -53,7 +53,7 @@ const processNewStories = async (limit?: number) => {
         )
       ],
       newNativeSourceStoriesToSaveToDb = await getKeysToSave(
-        newNativeSourceStoriesByIdTrimmedToLimit,
+        newNativeSourceStoriesByIdTrimmedToLimit.map((id) => String(id)),
         'Story'
       )
 
@@ -162,10 +162,7 @@ const processNewStories = async (limit?: number) => {
               storyActivityTimeSeriesTransaction.ts.create(
                 `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
                 {
-                  ...storyActivityTimeSeriesBaseOptions,
-                  LABELS: {
-                    ...storyActivityTimeSeriesBaseOptions.LABELS
-                  }
+                  ...storyActivityTimeSeriesBaseOptions
                 }
               )
             }
