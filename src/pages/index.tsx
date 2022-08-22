@@ -51,7 +51,7 @@ const Index = ({
   return (
     <div>
       <Head>
-        <title>meatballs.live &mdash; makin' meatballs since 2022</title>
+        <title>meatballs.live &mdash; makin&apos; meatballs since 2022</title>
         <meta
           name="description"
           content="meatballs.live remixes social news data to uncover new insights."
