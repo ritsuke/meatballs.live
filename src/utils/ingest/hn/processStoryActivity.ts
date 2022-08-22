@@ -1,5 +1,6 @@
 import axios from 'axios'
 import millisecondsToSeconds from 'date-fns/millisecondsToSeconds'
+import hoursToMilliseconds from 'date-fns/hoursToMilliseconds'
 import getTime from 'date-fns/getTime'
 import sub from 'date-fns/sub'
 
@@ -17,7 +18,6 @@ import {
 } from '.'
 import { HN_API_ENDPOINTS } from '.'
 import { processUserActivity, processNewComments } from '.'
-import { hoursToMilliseconds } from 'date-fns'
 
 // param(s) describe boundaries
 // e.g. only stories that are 6-12 hours old
@@ -49,7 +49,9 @@ const processStoryActivity = async ({
         : millisecondsToSeconds(now),
     storiesNotOlderThan =
       end !== undefined
-        ? millisecondsToSeconds(now - hoursToMilliseconds(end))
+        ? millisecondsToSeconds(
+            getTime(sub(storiesOlderThan * 1000, { hours: end }))
+          )
         : millisecondsToSeconds(
             getTime(sub(storiesOlderThan * 1000, { minutes: 5 }))
           ),
@@ -75,7 +77,9 @@ const processStoryActivity = async ({
     }, falloff = ${falloff ? falloff + '%' : 'N/A'}`
   )
 
-  let success = false
+  let success = false,
+    totalStoriesUpdatedWithLatestScore = 0,
+    totalStoriesUpdatedWithLatestCommentTotal = 0
 
   try {
     const storiesToUpdate = (
@@ -179,10 +183,12 @@ const processStoryActivity = async ({
 
               if (latestScore !== priorScore) {
                 setClause += `SET s.score = ${latestScore} `
+                totalStoriesUpdatedWithLatestScore++
               }
 
               if (latestCommentTotal !== priorCommentTotal) {
                 setClause += `SET s.comment_total = ${latestCommentTotal} `
+                totalStoriesUpdatedWithLatestCommentTotal++
               }
 
               if (setClause) {
@@ -200,9 +206,6 @@ const processStoryActivity = async ({
                 )
               }
             }
-
-            // let totalStoriesUpdatedWithLatestScore = 0,
-            //   totalStoriesUpdatedWithLatestCommentTotal = 0
 
             const shouldProcessNewComments = !latestLocked && !latestDeleted
 
@@ -234,6 +237,12 @@ const processStoryActivity = async ({
       await storiesToUpdateTransaction.exec()
 
       console.info(
+        `[INFO:StoryActivity:${DATA_SOURCE.HN}] ${totalStoriesUpdatedWithLatestScore} stories updated with latest score`
+      )
+      console.info(
+        `[INFO:StoryActivity:${DATA_SOURCE.HN}] ${totalStoriesUpdatedWithLatestCommentTotal} stories updated with latest comment total`
+      )
+      console.info(
         `[INFO:StoryActivity:${DATA_SOURCE.HN}] successfully updated ${totalStoriesUpdated} stories...`
       )
     }
@@ -251,19 +260,11 @@ const processStoryActivity = async ({
 
     throw errorMessage
   } finally {
-    // DONE!
-    // console.info(
-    //   `${totalStoriesUpdatedWithLatestScore} stories updated with latest score`
-    // )
-    // console.info(
-    //   `${totalStoriesUpdatedWithLatestCommentTotal} stories updated with latest comment total`
-    // )
-
     return {
       success,
       data: {
-        totalStoriesUpdatedWithLatestScore: 0,
-        totalStoriesUpdatedWithLatestCommentTotal: 0
+        totalStoriesUpdatedWithLatestScore,
+        totalStoriesUpdatedWithLatestCommentTotal
       }
     }
   }

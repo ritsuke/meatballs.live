@@ -1,4 +1,5 @@
 import axios from 'axios'
+import hoursToMilliseconds from 'date-fns/hoursToMilliseconds'
 
 import { DATA_SOURCE, MEATBALLS_DB_KEY } from '@/types/constants'
 
@@ -142,13 +143,17 @@ const processNewStories = async (limit?: number) => {
             // not necessary to check the latter if the former exists
             const [
               baseStoryActivityTimesSeriesExists,
-              compactedStoryActivityTimeSeriesExists
+              compactedStoryActivityTimeSeriesDayExists,
+              compactedStoryActivityTimeSeriesHourExists
             ] = await Promise.all([
               redisClient.exists(
                 `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`
               ),
               redisClient.exists(
                 `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:day`
+              ),
+              redisClient.exists(
+                `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:hour`
               )
             ])
 
@@ -156,24 +161,51 @@ const processNewStories = async (limit?: number) => {
               storyActivityTimeSeriesTransaction.ts.create(
                 `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
                 {
-                  ...storyActivityTimeSeriesBaseOptions
+                  ...storyActivityTimeSeriesBaseOptions,
+                  LABELS: {
+                    ...storyActivityTimeSeriesBaseOptions.LABELS
+                  }
                 }
               )
             }
 
-            if (compactedStoryActivityTimeSeriesExists === 0) {
+            if (compactedStoryActivityTimeSeriesDayExists === 0) {
               storyActivityTimeSeriesTransaction.ts
                 .create(
                   `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:day`,
                   {
-                    ...storyActivityTimeSeriesBaseOptions
+                    ...storyActivityTimeSeriesBaseOptions,
+                    LABELS: {
+                      ...storyActivityTimeSeriesBaseOptions.LABELS,
+                      compacted: 'day'
+                    }
                   }
                 )
                 .ts.createRule(
                   `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
                   `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:day`,
                   TimeSeriesAggregationType.SUM,
-                  86400000
+                  hoursToMilliseconds(24)
+                )
+            }
+
+            if (compactedStoryActivityTimeSeriesHourExists === 0) {
+              storyActivityTimeSeriesTransaction.ts
+                .create(
+                  `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:hour`,
+                  {
+                    ...storyActivityTimeSeriesBaseOptions,
+                    LABELS: {
+                      ...storyActivityTimeSeriesBaseOptions.LABELS,
+                      compacted: 'hour'
+                    }
+                  }
+                )
+                .ts.createRule(
+                  `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}`,
+                  `${storyActivityTimeSeriesBaseKey}:${storyActivityTimeSeriesTypeKeyAppend}:hour`,
+                  TimeSeriesAggregationType.SUM,
+                  hoursToMilliseconds(1)
                 )
             }
 
