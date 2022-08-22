@@ -93,7 +93,7 @@ const processNewComments = async (nativeSourceStoryId: string) => {
             deleted: ${deleted ?? false}
           })
 
-          MERGE (parent)-[:PROVOKES]->(comment)-[:REACTION_TO]->(parent)
+          MERGE (parent)-[:PROVOKED]->(comment)-[:REACTION_TO]->(parent)
           MERGE (user)-[:CREATED]->(comment)-[:CREATED_BY]->(user)
           RETURN comment
           `
