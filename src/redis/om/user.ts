@@ -13,3 +13,5 @@ const userSchema = new Schema(User, {
 })
 
 export const userRepository = redisOmClient.fetchRepository(userSchema)
+
+await userRepository.createIndex()

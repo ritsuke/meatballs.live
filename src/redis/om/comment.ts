@@ -13,3 +13,5 @@ const commentSchema = new Schema(Comment, {
 })
 
 export const commentRepository = redisOmClient.fetchRepository(commentSchema)
+
+await commentRepository.createIndex()
