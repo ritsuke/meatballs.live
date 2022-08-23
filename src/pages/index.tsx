@@ -68,7 +68,7 @@ const Index = ({
         >
           {data.totalMeatballsMade}{' '}
           <a
-            href="https://meatballs.live"
+            href="https://dev.to/ritsuke/remix-social-news-with-redis-cloud-299l"
             className={classnames(
               'underline underline-offset-4 decoration-primary'
             )}
