@@ -4,8 +4,9 @@ import { redisClient } from '@/redis/clients'
 
 import type { MeatballObjectType } from '@/redis/om/types'
 import { DATA_SOURCE } from '@/types/constants'
+import type { HackerNewsNativeCommentData } from './hn'
 
-export const getKeysToSave = async (
+export const getStoryKeysToSave = async (
   idsToCheck: string[],
   objectType: MeatballObjectType
 ) => {
@@ -29,6 +30,35 @@ export const getKeysToSave = async (
   })
 
   return keysToSave
+}
+
+export const getCommentsToSave = async (
+  objectsToCheck: HackerNewsNativeCommentData[],
+  objectType: MeatballObjectType
+) => {
+  // create transaction to check for stories that don't exist
+  const checkExistingKeyTransaction = redisClient.multi(),
+    objectsToSave: HackerNewsNativeCommentData[] = []
+
+  // add commands to transaction
+  objectsToCheck.map(({ id }) => {
+    id &&
+      checkExistingKeyTransaction.exists(
+        `${objectType}:${DATA_SOURCE.HN}:${id}`
+      )
+  })
+
+  // execute transaction
+  // returns number[] with values 0 (false), 1 (true)
+  const checkExistingCommentsTransactionResult =
+    await checkExistingKeyTransaction.exec()
+
+  // if key doesn't exist, push object to array
+  checkExistingCommentsTransactionResult.map((exists, index) => {
+    if (exists === 0) objectsToSave.push(objectsToCheck[index])
+  })
+
+  return objectsToSave
 }
 
 export const SOURCE_USER_AGENT = process.env.SOURCE_USER_AGENT

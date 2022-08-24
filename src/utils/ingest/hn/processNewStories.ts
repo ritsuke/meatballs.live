@@ -8,7 +8,7 @@ import { storyRepository } from '@/redis/om/story'
 
 import { isAxiosError } from '@/utils/api'
 
-import { getKeysToSave, SOURCE_REQUEST_HEADERS } from '..'
+import { getStoryKeysToSave, SOURCE_REQUEST_HEADERS } from '..'
 import {
   getStoryActivityTimeSeriesKey,
   getStoryActivityTimeSeriesSampleValue,
@@ -52,7 +52,7 @@ const processNewStories = async (limit?: number) => {
           limit || newNativeSourceStoriesById.length
         )
       ],
-      newNativeSourceStoriesToSaveToDb = await getKeysToSave(
+      newNativeSourceStoriesToSaveToDb = await getStoryKeysToSave(
         newNativeSourceStoriesByIdTrimmedToLimit.map((id) => String(id)),
         'Story'
       )
