@@ -1,7 +1,7 @@
 import cuid from 'cuid'
 import slugify from 'slugify'
 import axios from 'axios'
-import pick from 'lodash/pick'
+import pick from 'lodash-es/pick'
 
 import { TimeSeriesReducers } from '@redis/time-series/dist/commands'
 
