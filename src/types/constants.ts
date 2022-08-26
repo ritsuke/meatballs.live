@@ -1,6 +1,7 @@
 export enum DATA_SOURCE {
   HN = 'hn', // hacker news
-  REDDIT = 'reddit'
+  REDDIT = 'reddit',
+  MEATBALLS = 'meatballs' // internal
 }
 
 export enum MEATBALLS_DB_KEY {

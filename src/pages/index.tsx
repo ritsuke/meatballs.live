@@ -1,26 +1,27 @@
 import Head from 'next/head'
-import { InferGetServerSidePropsType } from 'next'
+import type { NextPage } from 'next'
 import classnames from 'classnames'
 
 import { redisClient } from '@/redis/clients'
 import { MEATBALLS_DB_KEY } from '@/types/constants'
 
 type IndexProps = {
-  totalMeatballsMade?: number
+  data: {
+    totalMeatballsMade?: number
+  }
 }
 
 export const getServerSideProps = async () => {
-  const data: IndexProps = {},
-    previewKey = '_cache:preview'
+  const previewKey = '_cache:preview'
 
   const previewCacheValue = await redisClient.get(previewKey)
 
   if (previewCacheValue) {
-    data.totalMeatballsMade = parseInt(previewCacheValue)
-
     return {
       props: {
-        data
+        data: {
+          totalMeatballsMade: parseInt(previewCacheValue)
+        }
       }
     }
   }
@@ -34,20 +35,18 @@ export const getServerSideProps = async () => {
 
   if (typeof totalMeatballsMade === 'number') {
     await redisClient.set(previewKey, String(totalMeatballsMade), { EX: 60 })
-
-    data.totalMeatballsMade = totalMeatballsMade
   }
 
   return {
     props: {
-      data
+      data: {
+        totalMeatballsMade: parseInt(`${totalMeatballsMade}` || '0')
+      }
     }
   }
 }
 
-const Index = ({
-  data
-}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Index: NextPage<IndexProps> = ({ data }) => {
   return (
     <div>
       <Head>

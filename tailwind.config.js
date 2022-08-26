@@ -3,7 +3,8 @@ module.exports = {
   content: ['./src/pages/**/*.{ts,tsx}', './src/components/**/*.{ts,tsx}'],
   theme: {
     fontFamily: {
-      sans: ['Lato', 'ui-sans-serif', 'system-ui']
+      sans: ['Lato', 'ui-sans-serif', 'system-ui'],
+      serif: ['Roboto Serif', 'ui-serif', 'Georgia', 'Cambria', 'serif']
     },
     extend: {
       colors: {
@@ -11,5 +12,5 @@ module.exports = {
       }
     }
   },
-  plugins: []
+  plugins: [require('@tailwindcss/line-clamp')]
 }

@@ -14,7 +14,7 @@ const IngestServiceApiHeaders = z.object({
   )
 })
 
-export const ingestAuthApiMiddleware = (
+export const servicesAuthApiMiddleware = (
   req: NextApiRequest,
   res: NextApiResponse,
   next: NextHandler

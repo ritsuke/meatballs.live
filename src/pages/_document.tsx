@@ -11,15 +11,13 @@ const Document = () => {
           href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&display=optional"
           rel="stylesheet"
         />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Roboto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=optional"
+          rel="stylesheet"
+        />
       </Head>
 
-      <body
-        className={classnames(
-          'h-screen w-screen',
-          'bg-black text-white',
-          'bg-[url(/images/meatballs.png)] bg-cover bg-center bg-no-repeat'
-        )}
-      >
+      <body className={classnames('bg-black text-white')}>
         <Main />
 
         <NextScript />

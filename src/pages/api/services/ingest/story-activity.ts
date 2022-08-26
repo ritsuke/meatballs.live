@@ -9,7 +9,7 @@ import {
   onError,
   onNoMatch
 } from '@/utils/api'
-import { ingestAuthApiMiddleware } from '@/utils/ingest/middleware'
+import { servicesAuthApiMiddleware } from '@/utils/ingest/middleware'
 import { processStoryActivity } from '@/utils/ingest/hn'
 
 const StoryActivityIngestServiceApi = nextConnect<
@@ -32,7 +32,7 @@ const StoryActivityIngestServiceApiQuery = z.object({
   falloff: apiParamPositiveIntPreprocessor({ max: 100 }).optional()
 })
 
-StoryActivityIngestServiceApi.use(ingestAuthApiMiddleware)
+StoryActivityIngestServiceApi.use(servicesAuthApiMiddleware)
 
 StoryActivityIngestServiceApi.post(async (req, res) => {
   const query = StoryActivityIngestServiceApiQuery.safeParse(req.query)
