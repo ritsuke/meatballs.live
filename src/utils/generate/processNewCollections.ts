@@ -2,12 +2,14 @@ import cuid from 'cuid'
 import slugify from 'slugify'
 import axios from 'axios'
 import pick from 'lodash-es/pick'
+import { stripHtml } from 'string-strip-html'
 
 import { TimeSeriesReducers } from '@redis/time-series/dist/commands'
 
 import { redisClient } from '@/redis/clients'
 import { collectionRepository } from '@/redis/om/collection'
 import { storyRepository } from '@/redis/om/story'
+import { commentRepository } from '@/redis/om/comment'
 import {
   DATA_SOURCE,
   HTTP_STATUS_CODE,
@@ -15,9 +17,9 @@ import {
 } from '@/types/constants'
 
 import { removeSpecialCharacters } from '..'
+import { isAxiosError } from '../api'
 import { getCollectionsByDate, getUTCTimeFromYMDKey } from '../collections'
 import { UnsplashPhotoData, UNSPLASH_API_ENDPOINTS } from '../ingest/unsplash'
-import { isAxiosError } from '../api'
 
 // TODO: handle potential for overlapping requests (e.g. block)
 const processNewCollections = async ({
@@ -163,10 +165,23 @@ const processNewCollections = async ({
         const slug = cuid.slug()
 
         try {
-          const [collection, storyContent] = await Promise.all([
-            collectionRepository.fetch(`${collectionsKeyPrepend}:${slug}`),
-            storyRepository.fetch(story.id)
-          ])
+          const [collection, storyContent, topCommentFromGraph] =
+              await Promise.all([
+                collectionRepository.fetch(`${collectionsKeyPrepend}:${slug}`),
+                storyRepository.fetch(story.id),
+                redisClient.graph.query(
+                  `${MEATBALLS_DB_KEY.GRAPH}`,
+                  `
+              MATCH (:Story { name: "${story.id}" })-[:PROVOKED]->(rootComment)<-[:REACTION_TO*1..]-(childComment)
+              WITH rootComment, collect(childComment) as childComments
+              RETURN rootComment.name, SIZE(childComments)
+              ORDER BY SIZE(childComments) DESC LIMIT 1
+              `
+                )
+              ]),
+            topComment = await commentRepository.fetch(
+              topCommentFromGraph.data[0][0] as string
+            )
 
           collection.year = year
           collection.month = month
@@ -177,6 +192,9 @@ const processNewCollections = async ({
                 strict: true,
                 lower: true
               })}-${slug}`
+            : null
+          collection.top_comment = topComment.content
+            ? stripHtml(topComment.content).result
             : null
           collection.position = index
           collection.comment_total = story.comment_total

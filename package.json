@@ -28,6 +28,7 @@
     "redis-om": "^0.3.6",
     "sass": "^1.54.4",
     "slugify": "^1.6.5",
+    "string-strip-html": "^11.3.0",
     "zod": "^3.18.0"
   },
   "devDependencies": {

@@ -8,7 +8,7 @@ export interface Collection {
   day: number
   title: string | null
   slug: string | null
-  top_comment: string
+  top_comment: string | null
   comment_total: number
   image_username: string
   image_user_url: string

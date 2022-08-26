@@ -52,7 +52,14 @@ const CollectionCoverImage = ({
                 {collection.title}
               </div>
 
-              <div className={classnames('font-serif italic')}>top comment</div>
+              <div
+                className={classnames(
+                  'font-serif italic text-clip line-clamp-4'
+                )}
+                title={collection.top_comment || 'No clue!'}
+              >
+                {collection.top_comment}
+              </div>
             </div>
 
             <div
