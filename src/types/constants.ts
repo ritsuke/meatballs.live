@@ -12,6 +12,10 @@ export enum MEATBALLS_DB_KEY {
   SEARCH = '_search'
 }
 
+export enum MEATBALLS_PUB_SUB_KEY {
+  COMMENT_STREAM = 'MEATBALLS:COMMENT_STREAM'
+}
+
 export enum HTTP_METHOD {
   CONNECT = 'CONNECT',
   DELETE = 'DELETE',

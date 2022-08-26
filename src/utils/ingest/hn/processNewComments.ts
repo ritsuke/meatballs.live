@@ -1,9 +1,11 @@
 import axios from 'axios'
+import { stripHtml } from 'string-strip-html'
 
 import {
   DATA_SOURCE,
   HTTP_STATUS_CODE,
-  MEATBALLS_DB_KEY
+  MEATBALLS_DB_KEY,
+  MEATBALLS_PUB_SUB_KEY
 } from '@/types/constants'
 
 import { isAxiosError } from '@/utils/api'
@@ -79,8 +81,18 @@ const processNewComments = async (nativeSourceStoryId: string) => {
 
         newComment.content = content ?? null
 
-        // save JSON
-        await commentRepository.save(newComment)
+        await Promise.all([
+          redisClient.publish(
+            MEATBALLS_PUB_SUB_KEY.COMMENT_STREAM,
+            JSON.stringify({
+              id: comment.id,
+              user,
+              content: content ? stripHtml(content) : null
+            })
+          ),
+          // save JSON
+          commentRepository.save(newComment)
+        ])
 
         // add query to nodes transaction
         commentNodesTransaction.graph.query(
