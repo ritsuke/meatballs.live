@@ -87,7 +87,8 @@ const processNewComments = async (nativeSourceStoryId: string) => {
             JSON.stringify({
               id: comment.id,
               user,
-              content: content ? stripHtml(content) : null
+              created,
+              content: content ? stripHtml(content).result : null
             })
           ),
           // save JSON
