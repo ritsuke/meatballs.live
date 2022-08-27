@@ -240,15 +240,22 @@ const processStoryActivity = async ({
 
       await storiesToUpdateTransaction.exec()
 
-      await redisClient.publish(
-        MEATBALLS_CHANNEL_KEY.FRONTPAGE_STREAM,
-        JSON.stringify({
-          meatballs: await redisClient.graph.query(
-            MEATBALLS_DB_KEY.GRAPH,
-            `MATCH (n) RETURN count(*)`
-          )
-        })
-      )
+      if (
+        totalStoriesUpdatedWithLatestScore > 0 ||
+        totalStoriesUpdatedWithLatestCommentTotal > 0
+      ) {
+        await redisClient.publish(
+          MEATBALLS_CHANNEL_KEY.FRONTPAGE_STREAM,
+          JSON.stringify({
+            meatballs: (
+              await redisClient.graph.query(
+                MEATBALLS_DB_KEY.GRAPH,
+                `MATCH (n) RETURN count(*)`
+              )
+            ).data[0][0] as number
+          })
+        )
+      }
 
       console.info(
         `[INFO:StoryActivity:${DATA_SOURCE.HN}] ${totalStoriesUpdatedWithLatestScore} stories updated with latest score`
