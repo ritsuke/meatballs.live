@@ -5,7 +5,7 @@ import {
   DATA_SOURCE,
   HTTP_STATUS_CODE,
   MEATBALLS_DB_KEY,
-  MEATBALLS_PUB_SUB_KEY
+  MEATBALLS_CHANNEL_KEY
 } from '@/types/constants'
 
 import { isAxiosError } from '@/utils/api'
@@ -83,7 +83,7 @@ const processNewComments = async (nativeSourceStoryId: string) => {
 
         await Promise.all([
           redisClient.publish(
-            MEATBALLS_PUB_SUB_KEY.COMMENT_STREAM,
+            MEATBALLS_CHANNEL_KEY.COMMENT_STREAM,
             JSON.stringify({
               id: comment.id,
               user,

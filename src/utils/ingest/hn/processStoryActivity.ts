@@ -4,7 +4,11 @@ import hoursToMilliseconds from 'date-fns/hoursToMilliseconds'
 import getTime from 'date-fns/getTime'
 import sub from 'date-fns/sub'
 
-import { DATA_SOURCE, MEATBALLS_DB_KEY } from '@/types/constants'
+import {
+  DATA_SOURCE,
+  MEATBALLS_CHANNEL_KEY,
+  MEATBALLS_DB_KEY
+} from '@/types/constants'
 
 import { redisClient } from '@/redis/clients'
 
@@ -235,6 +239,16 @@ const processStoryActivity = async ({
       )
 
       await storiesToUpdateTransaction.exec()
+
+      await redisClient.publish(
+        MEATBALLS_CHANNEL_KEY.FRONTPAGE_STREAM,
+        JSON.stringify({
+          meatballs: await redisClient.graph.query(
+            MEATBALLS_DB_KEY.GRAPH,
+            `MATCH (n) RETURN count(*)`
+          )
+        })
+      )
 
       console.info(
         `[INFO:StoryActivity:${DATA_SOURCE.HN}] ${totalStoriesUpdatedWithLatestScore} stories updated with latest score`
