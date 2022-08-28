@@ -64,12 +64,20 @@ const CommentInput = () => {
   return (
     <div
       className={classnames(
-        'fixed h-11 bottom-0 w-full grid place-content-center'
+        'absolute h-11 bottom-0 w-full grid place-content-center',
+        {
+          'border-t border-t-gray-700': status !== 'authenticated'
+        }
       )}
     >
       {status !== 'authenticated' && (
         <span>
-          <a onClick={() => signIn()}>Sign in</a> to comment...
+          {status === 'unauthenticated' && (
+            <>
+              <a onClick={() => signIn()}>Sign in</a> to comment...
+            </>
+          )}
+          {status === 'loading' && <>Signing in...</>}
         </span>
       )}
 
