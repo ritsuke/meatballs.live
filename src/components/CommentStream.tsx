@@ -64,7 +64,7 @@ const CommentInput = () => {
   return (
     <div
       className={classnames(
-        'absolute h-11 bottom-0 w-full grid place-content-center'
+        'fixed h-11 bottom-0 w-full grid place-content-center'
       )}
     >
       {status !== 'authenticated' && (

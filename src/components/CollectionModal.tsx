@@ -116,7 +116,7 @@ const CollectionModal = ({
           >
             <div
               className={classnames(
-                'fixed right-8 lg:right-[430px] top-8 hover:cursor-pointer bg-black/20 p-1 rounded-full'
+                'fixed z-50 right-8 lg:right-[430px] top-8 hover:cursor-pointer bg-black/20 p-1 rounded-full'
               )}
               onClick={closeModal}
             >
