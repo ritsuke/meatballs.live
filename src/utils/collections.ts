@@ -1,6 +1,7 @@
 import type { ParsedUrlQuery } from 'querystring'
+import { Repository } from 'redis-om'
 
-import { collectionRepository } from '@/redis/om/collection'
+import { Collection } from '@/redis/om/collection'
 
 export type CollectionDate = {
   year: number
@@ -23,18 +24,43 @@ export const getUTCTimeFromYMDKey = (key: string, end?: boolean) => {
     baseDate = new Date(year, month - 1, day)
 
   if (end) {
-    return baseDate.setUTCHours(23, 59, 59)
+    return baseDate.setUTCHours(23, 59, 59, 9999)
   }
 
-  return baseDate.setUTCHours(0, 0, 0)
+  return baseDate.setUTCHours(0, 0, 0, 0)
 }
 
+export const getYMDKeyFromUTCTime = (time: number) => {
+  const date = new Date(time)
+
+  return `${date.getUTCFullYear()}:${
+    date.getUTCMonth() + 1
+  }:${date.getUTCDate()}`
+}
+
+export const getTimePartsFromYMDKey = (key: string) => {
+  const [year, month, day] = key.split(':')
+
+  return { year: parseInt(year), month: parseInt(month), day: parseInt(day) }
+}
+
+export const getCollectionsUrlFromYMDKey = (key: string) =>
+  `/c/${key.replace(/:/g, '/')}/`
+
+export const getYMDKeyFromTimeParts = (
+  year: number,
+  month: number,
+  day: number
+) => `${year}:${month}:${day}`
+
 export const getCollectionsByDate = async ({
-  year,
-  month,
-  day
-}: CollectionDate) =>
-  await collectionRepository
+  repository,
+  date: { year, month, day }
+}: {
+  repository: Repository<Collection>
+  date: CollectionDate
+}) =>
+  await repository
     .search()
     .where('year')
     .eq(year)

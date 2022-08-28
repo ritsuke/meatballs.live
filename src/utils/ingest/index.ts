@@ -69,3 +69,5 @@ if (!SOURCE_USER_AGENT)
 export const SOURCE_REQUEST_HEADERS: AxiosRequestHeaders = {
   'User-Agent': SOURCE_USER_AGENT || 'unknown'
 }
+
+export const ALLOWED_TAGS = ['p', 'a', 'b', 'strong', 'i', 'em', 'code', 'pre']

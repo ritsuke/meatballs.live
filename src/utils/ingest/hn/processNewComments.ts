@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { stripHtml } from 'string-strip-html'
+import striptags from 'striptags'
 
 import {
   DATA_SOURCE,
@@ -14,6 +14,7 @@ import { redisClient } from '@/redis/clients'
 import { commentRepository } from '@/redis/om/comment'
 
 import {
+  ALLOWED_TAGS,
   getCommentsToSave,
   SOURCE_REQUEST_HEADERS,
   SOURCE_USER_AGENT
@@ -88,7 +89,7 @@ const processNewComments = async (nativeSourceStoryId: string) => {
               id: comment.id,
               user,
               created,
-              content: content ? stripHtml(content).result : null
+              content: content ? striptags(content, ALLOWED_TAGS) : null
             })
           ),
           // save JSON

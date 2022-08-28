@@ -2,7 +2,7 @@ import cuid from 'cuid'
 import slugify from 'slugify'
 import axios from 'axios'
 import pick from 'lodash-es/pick'
-import { stripHtml } from 'string-strip-html'
+import striptags from 'striptags'
 
 import { TimeSeriesReducers } from '@redis/time-series/dist/commands'
 
@@ -18,6 +18,7 @@ import {
 
 import { removeSpecialCharacters } from '..'
 import { isAxiosError } from '../api'
+import { ALLOWED_TAGS } from '../ingest'
 import { getCollectionsByDate, getUTCTimeFromYMDKey } from '../collections'
 import { UnsplashPhotoData, UNSPLASH_API_ENDPOINTS } from '../ingest/unsplash'
 
@@ -48,7 +49,7 @@ const processNewCollections = async ({
       year,
       month - 1,
       day
-    ).setUTCHours(0, 0, 0),
+    ).setUTCHours(0, 0, 0, 0),
     collectionsStartDateInMilliseconds = getUTCTimeFromYMDKey(
       collectionsStartDateKey
     )
@@ -59,7 +60,7 @@ const processNewCollections = async ({
     if (
       startOfRequestedDayInMilliseconds < collectionsStartDateInMilliseconds ||
       startOfRequestedDayInMilliseconds >
-        new Date(Date.now()).setUTCHours(23, 59, 59, 0) - 86400000
+        new Date(Date.now()).setUTCHours(23, 59, 59, 9999) - 86400000
     ) {
       notFound = true
       throw new Error(`${HTTP_STATUS_CODE.NOT_FOUND}`)
@@ -68,9 +69,12 @@ const processNewCollections = async ({
     const collectionsKeyPrepend = `${year}:${month}:${day}`
 
     const foundCollections = await getCollectionsByDate({
-      year,
-      month,
-      day
+      repository: collectionRepository,
+      date: {
+        year,
+        month,
+        day
+      }
     })
 
     if (foundCollections.length > 0) {
@@ -165,23 +169,25 @@ const processNewCollections = async ({
         const slug = cuid.slug()
 
         try {
-          const [collection, storyContent, topCommentFromGraph] =
+          const [collection, storyContent, topCommentsFromGraph] =
               await Promise.all([
                 collectionRepository.fetch(`${collectionsKeyPrepend}:${slug}`),
                 storyRepository.fetch(story.id),
                 redisClient.graph.query(
                   `${MEATBALLS_DB_KEY.GRAPH}`,
                   `
-              MATCH (:Story { name: "${story.id}" })-[:PROVOKED]->(rootComment)<-[:REACTION_TO*1..]-(childComment)
-              WITH rootComment, collect(childComment) as childComments
-              RETURN rootComment.name, SIZE(childComments)
-              ORDER BY SIZE(childComments) DESC LIMIT 1
+              MATCH (:Story { name: "${story.id}" })-[:PROVOKED]->(topComment)<-[:REACTION_TO*1..]-(childComment)
+              WITH topComment, collect(childComment) as childComments
+              RETURN topComment.name, topComment.created, SIZE(childComments)
+              ORDER BY SIZE(childComments) DESC LIMIT 5
               `
                 )
               ]),
-            topComment = await commentRepository.fetch(
-              topCommentFromGraph.data[0][0] as string
-            )
+            topComment = topCommentsFromGraph.data[0]
+              ? await commentRepository.fetch(
+                  topCommentsFromGraph.data[0][0] as string
+                )
+              : null
 
           collection.year = year
           collection.month = month
@@ -193,11 +199,12 @@ const processNewCollections = async ({
                 lower: true
               })}-${slug}`
             : null
-          collection.top_comment = topComment.content
-            ? stripHtml(topComment.content).result
+          collection.top_comment = topComment?.content
+            ? striptags(topComment.content, ALLOWED_TAGS)
             : null
           collection.position = index
           collection.comment_total = story.comment_total
+          collection.origins = [story.id]
 
           let photoData: UnsplashPhotoData | undefined = undefined
 
@@ -224,7 +231,98 @@ const processNewCollections = async ({
             collection.image_blur_hash = photoData.blur_hash
           }
 
-          await collectionRepository.save(collection)
+          // who create the story and the stories url (if not a self post)
+          const [created_by, address] = (
+            await redisClient.graph.query(
+              MEATBALLS_DB_KEY.GRAPH,
+              `
+            MATCH (u:User)-[:CREATED]->(:Story { name: "${story.id}" })
+            MATCH (:Story { name: "${story.id}" })-->(url:Url)
+            RETURN u.name, url.address
+            `
+            )
+          ).data[0]
+
+          const queryTitle = storyContent.title
+            ? removeSpecialCharacters(storyContent.title).replace(/ /g, '|')
+            : undefined
+
+          const recommendedStories: { id: string; title: string }[] = []
+
+          if (queryTitle) {
+            try {
+              const foundDocuments = (
+                  await redisClient.ft.search(`Story:index`, queryTitle, {
+                    LIMIT: { from: 0, size: 5 }
+                  })
+                ).documents,
+                docTitles = foundDocuments.map(({ value }) => value.title)
+
+              foundDocuments
+                .filter(
+                  ({ id, value }, index) =>
+                    value.title &&
+                    !docTitles.includes(value.title, index + 1) &&
+                    id.replace('Story:', '') !== story.id &&
+                    value.title !== storyContent.title
+                )
+                .map(({ id, value }) => {
+                  if (value.title)
+                    recommendedStories.push({
+                      id: id.replace('Story:hn:', ''),
+                      title: value.title as string
+                    })
+                })
+            } catch (error) {
+              console.error('Unable to find recommended stories.')
+            }
+          }
+
+          // TODO: types
+          await Promise.all([
+            collectionRepository.save(collection),
+            redisClient.set(
+              `Collection:${collectionsKeyPrepend}:${slug}:_cache`,
+              JSON.stringify({
+                story: {
+                  id: story.id.replace(`${DATA_SOURCE.HN}:`, ''),
+                  created: story.created,
+                  content: storyContent.content
+                    ? striptags(storyContent.content, ALLOWED_TAGS)
+                    : null,
+                  created_by,
+                  address: address && address !== 'undefined' ? address : null
+                },
+                comments: await Promise.all(
+                  topCommentsFromGraph.data.map(
+                    //@ts-ignore
+                    async (comment) => {
+                      const { entityId, content } =
+                        await commentRepository.fetch(comment[0] as string)
+
+                      const user = await redisClient.graph.query(
+                        MEATBALLS_DB_KEY.GRAPH,
+                        `
+                        MATCH (u:User)-[:CREATED]->(:Comment { name: "${entityId}" })
+                        RETURN u.name
+                        `
+                      )
+
+                      return {
+                        id: entityId.replace(`${DATA_SOURCE.HN}:`, ''),
+                        content: content
+                          ? striptags(content, ALLOWED_TAGS)
+                          : null,
+                        created: comment[1],
+                        created_by: user.data[0][0]
+                      }
+                    }
+                  )
+                ),
+                recommended_stories: recommendedStories
+              })
+            )
+          ])
 
           return collection
         } catch (error) {

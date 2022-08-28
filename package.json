@@ -9,8 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@casper124578/use-socket.io": "^4.1.2",
+    "@formkit/auto-animate": "^1.0.0-beta.3",
     "@next-auth/upstash-redis-adapter": "^3.0.1",
+    "@radix-ui/react-scroll-area": "^1.0.0",
     "@tailwindcss/line-clamp": "^0.4.0",
+    "@tanem/react-nprogress": "^5.0.12",
     "@upstash/redis": "^1.11.0",
     "axios": "^0.27.2",
     "blurhash": "^1.1.5",
@@ -28,7 +32,9 @@
     "redis-om": "^0.3.6",
     "sass": "^1.54.4",
     "slugify": "^1.6.5",
+    "socket.io-client": "^4.5.1",
     "string-strip-html": "^11.3.0",
+    "striptags": "^3.2.0",
     "zod": "^3.18.0"
   },
   "devDependencies": {

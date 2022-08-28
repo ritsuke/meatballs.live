@@ -13,18 +13,6 @@ const nextConfig = {
       topLevelAwait: true
     }
     return config
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/c/:year/:month/:day/',
-        destination: '/_collections/:year/:month/:day/'
-      },
-      {
-        source: '/c/:year/:month/:day/:cid/',
-        destination: '/_collections/:year/:month/:day/:cid/'
-      }
-    ]
   }
 }
 

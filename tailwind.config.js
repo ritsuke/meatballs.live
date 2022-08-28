@@ -8,7 +8,8 @@ module.exports = {
     },
     extend: {
       colors: {
-        primary: 'hsl(310, 100%, 54%)'
+        primary: 'hsl(310, 100%, 54%)',
+        hn: 'hsl(21, 100%, 50%)'
       }
     }
   },

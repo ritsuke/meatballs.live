@@ -10,11 +10,11 @@ export interface Collection {
   slug: string | null
   top_comment: string | null
   comment_total: number
-  image_username: string
-  image_user_url: string
-  image_url: string
-  image_source_url: string
-  image_blur_hash: string
+  image_username: string | null
+  image_user_url: string | null
+  image_url: string | null
+  image_source_url: string | null
+  image_blur_hash: string | null
   position: number // collection rank 0..*
   origins: string[] // origin stories
 }
@@ -35,7 +35,7 @@ const collectionSchema = new Schema(Collection, {
   image_source_url: { type: 'string' },
   image_blur_hash: { type: 'string' },
   position: { type: 'number', sortable: true },
-  stories: { type: 'string[]' }
+  origins: { type: 'string[]' }
 })
 
 export const collectionRepository =
