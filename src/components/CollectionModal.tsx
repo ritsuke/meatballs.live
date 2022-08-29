@@ -41,7 +41,7 @@ const RecommendedComment = ({ comment }: { comment: RecommendedComment }) => {
   ).toLocaleDateString()}`
 
   return (
-    <div key={comment.id} className={classnames('mb-10')}>
+    <div key={comment.id} className={classnames('mb-10 w-0 min-w-full')}>
       <div
         className={classnames('mb-3 text-lg leading-9')}
         dangerouslySetInnerHTML={{ __html: comment.content }}
@@ -75,7 +75,7 @@ const RecommendedComment = ({ comment }: { comment: RecommendedComment }) => {
 const RecommendedStory = ({ story }: { story: RecommendedStory }) => {
   return (
     <a
-      className={classnames('block mb-4 last:m-0 leading-7')}
+      className={classnames('block mb-4 last:m-0 leading-7 w-0 min-w-full')}
       href={`https://news.ycombinator.com/item?id=${story.id}`}
       target="_blank"
       rel="noopener noreferrer"
@@ -139,7 +139,7 @@ const CollectionModal = ({
             </div>
 
             <div className={classnames('pt-20 max-w-7xl mx-auto')}>
-              <div className={classnames('mb-10')}>
+              <div className={classnames('mb-10 w-0 min-w-full')}>
                 {/* title */}
                 <h1 className={classnames('text-3xl lg:text-7xl mb-4')}>
                   <span
@@ -156,7 +156,7 @@ const CollectionModal = ({
                 {story.address && (
                   <a
                     className={classnames(
-                      'inline-block mb-4 text-lg lg:text-2xl no-underline italic'
+                      'inline-block mb-4 text-lg lg:text-2xl no-underline italic break-all'
                     )}
                     href={story.address}
                     target="_blank"
@@ -218,7 +218,9 @@ const CollectionModal = ({
 
                   {/* selected comments */}
                   {comments.length === 0 && (
-                    <div>No recommended comments found...</div>
+                    <div className={classnames('mb-8')}>
+                      No recommended comments found...
+                    </div>
                   )}
                   {comments.map((comment) => (
                     <RecommendedComment key={comment.id} comment={comment} />
