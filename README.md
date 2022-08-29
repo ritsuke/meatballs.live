@@ -1,18 +1,40 @@
 # meatballs.live
 
-[Insert description of app]
+meatballs is an automated recommendation network and web app for discovering interesting conversations across social news.
 
-[Insert app screenshots](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#uploading-assets)
+The network currently supports [Hacker News](https://news.ycombinator.com), with more integrations planned.
+
+By ingesting, connecting and analyzing large amounts of time-series data, meatballs (and associated services) is capable of weighting and generating daily collections of top stories, with a bias for the comment section.
+
+![Screenshot of meatballs Frontpage and Comment Stream](assets/app-frontpage-and-comment-stream.png)
+
+![Screenshot of meatballs Collections Grid](assets/app-collections-grid.png)
+
+![Screenshot of meatballs Collection Modal](assets/app-collection-modal.png)
 
 # Overview video (Optional)
 
 Here's a short video that explains the project and how it uses Redis:
 
-[Insert your own video here, and remove the one below]
-
-[![Embed your YouTube video](https://i.ytimg.com/vi/vyxdC1qK4NE/maxresdefault.jpg)](https://www.youtube.com/watch?v=vyxdC1qK4NE)
+[![meatballs Video Introduction](assets/video-screenshot.png)](https://www.youtube.com/watch?v=vyxdC1qK4NE)
 
 ## How it works
+
+meatballs was created for the DEV.to x Redis Hackathon, with three primary design goals:
+
+1. leverage the Redis Stack to consume, process, sift and generate insights from big data
+2. learn and utilize as many multi-model capabilities of the Redis Stack as possible
+3. combine 1 and 2 to create a compelling user experience
+
+The high level architecture for meatballs is as follows:
+
+![meatballs high-level architecture diagram](assets/meatball-architecture-diagram.png)
+
+To meet the challenge, meatballs is three open-source projects:
+
+- web app (UI) made with TypeScript and Next.js (this project)
+- node server called [**meatballs.live-jobs (casper)**](https://github.com/ritsuke/meatballs.live-jobs) responsible for making scheduled, weighted calls to the [`ingest`](https://github.com/ritsuke/meatballs.live/tree/main/src/pages/api/services/ingest) and [`generate`](https://github.com/ritsuke/meatballs.live/tree/main/src/pages/api/services/generate) service APIs
+- node server called [**meatballs.live-stream (kodama)**](https://github.com/ritsuke/meatballs.live-stream) responsible for processing Redis pub/sub events via web sockets
 
 ### How the data is stored:
 
@@ -22,45 +44,151 @@ Refer to [this example](https://github.com/redis-developer/basic-analytics-dashb
 
 Refer to [this example](https://github.com/redis-developer/basic-analytics-dashboard-redis-bitmaps-nodejs#how-the-data-is-accessed) for a more detailed example of what you need for this section.
 
-### Performance Benchmarks
-
-[If you migrated an existing app to use Redis, please put performance benchmarks here to show the performance improvements.]
-
 ## How to run it locally?
 
-[Make sure you test this with a fresh clone of your repo, these instructions will be used to judge your app.]
+This is a complex, **wacky wildcard** of a platform, with three projects to configure. Strap in tight!
+
+If you have any issues, please open a ticket.
+
+For sanity, the three projects that must be setup will be referred to as:
+
+1. APP ([meatballs.live](https://github.com/ritsuke/meatballs.live); this project)
+2. JOBS SERVER ([meatballs.live-jobs](https://github.com/ritsuke/meatballs.live-jobs))
+3. STREAM SERVER ([meatballs.live-stream](https://github.com/ritsuke/meatballs.live-stream))
 
 ### Prerequisites
 
-[Fill out with any prerequisites (e.g. Node, Docker, etc.). Specify minimum versions]
+- [Git](https://git-scm.com/downloads) 2.37.2
+- [Node](https://nodejs.org/download/release/v16.5.0/) 16.50.0
+- [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/) 1.22.19
+- [Thunder Client for VS Code](https://marketplace.visualstudio.com/items?itemName=rangav.vscode-thunder-client); optional, but required to use [thunder-tests](https://github.com/ritsuke/meatballs.live/tree/main/thunder-tests)
+- Redis Stack DB credentials and endpoint ([Redis Cloud](https://redis.info/try-free-dev-to) or [local install](stack))
+- [Github account](https://github.com/settings/apps); app credentials (auth)
+- [Upstash account](https://upstash.com/blog/next-auth-serverless-redis); app credentials (auth)
+- [Unsplash account](https://unsplash.com/oauth/applications); DB credentials and endpoint (collection cover)
 
 ### Local installation
 
-[Insert instructions for local installation]
+Let's start with the APP...
+
+1. Clone this repo
+2. Run `yarn` in the project folder to install dependencies
+3. Copy `.env.sample` to `.env` and fill in your unique values, following the steps below:
+
+`REDIS_DB_URL`
+
+1. Copy and paste your Redis endpoint URL (e.g. `redis://USERNAME:PASSWORD@HOST:PORT`) to your `.env` file
+
+[`NEXTAUTH_URL`](https://next-auth.js.org/configuration/options#nextauth_url)
+
+1. Copy and paste `https://localhost:3000` to your `.env` file
+
+[`NEXTAUTH_SECRET`](https://next-auth.js.org/configuration/options#nextauth_secret)
+
+1. Run `openssl rand -base64 32` in your terminal to generate, then copy and paste to your `.env` file; Windows users can use **Git Bash**, **WSL**, etc.
+
+`GITHUB_CLIENT_ID`
+
+1. Head to [https://github.com/settings/apps](https://github.com/settings/apps) and click **New GitHub App**
+2. Enter the app name and home page URL
+3. Set your callback URL to `http://localhost:3000/api/auth/callback/github`
+4. Disable webhook, scroll to the bottom and click **Create GitHub App**
+5. On the app page, copy and paste your client ID to your `.env` file
+
+`GITHUB_CLIENT_SECRET`
+
+6. Below where you got the client ID, click **Generate a new client secret**, then copy and paste the new client secret to your `.env` file
+
+`UPSTASH_REDIS_AUTH_REST_URL`
+
+1. [Sign up](https://console.upstash.com/login) for a free Upstash account and at the console, under the **Redis** tab, click **Create database**
+2. Name your database, select type and region, enable TLS and click **Create**
+3. Under the new database details, scroll to **REST API** and copy paste the rest URL to your `.env` file
+
+`UPSTASH_REDIS_AUTH_REST_TOKEN`
+
+4. Right next to that, copy and paste the rest token to your `.env` file
+
+`UPSTASH_REDIS_AUTH_PREFIX`
+
+5. Copy and paste `meatballs-live:` to your `.env` file; this prepends auth-specific keys in-case you use the server for other data
+
+`UNSPLASH_ACCESS_KEY`
+
+1. Create a free [Unsplash](https://unsplash.com/join) account
+2. Navigate to [your apps](https://unsplash.com/oauth/applications), click **New Application** and **Accept Terms**
+3. Enter application name and description
+4. Scroll to down to **Keys**; copy and paste the access key to your `.env` file
+
+`SOURCE_USER_AGENT`
+
+meatballs.live (APP) [**ingest**](https://github.com/ritsuke/meatballs.live/tree/main/src/utils/ingest) and [**generate**](https://github.com/ritsuke/meatballs.live/tree/main/src/utils/generate) processors make requests to 3rd party APIs; enter a value that identifies you to these APIs
+
+---
+
+Before configuring the remaining environment variables, clone [meatballs.live-jobs](https://github.com/ritsuke/meatballs.live-jobs) (JOBS SERVER).
+
+Follow the [README](https://github.com/ritsuke/meatballs.live-jobs/blob/main/README.md) and then continue with this guide.
+
+---
+
+At this point, you should have **meatballs.live-jobs** (JOBS SERVER) configured.
+
+Welcome back! Let's continue.
+
+`INGEST_API_KEY`
+
+1. Paste the key from **meatballs.live-jobs** (JOBS SERVER) to your `.env` file; these must match between the two projects, as the APP API uses this key for authenticated calls from the JOBS SERVER
+
+Copy your `REDIS_DB_URL` value. You will need if for the next step.
+
+---
+
+Before configuring the remaining environment variables, clone [meatballs.live-stream](https://github.com/ritsuke/meatballs.live-jobs) (STREAM SERVER).
+
+Follow the [README](https://github.com/ritsuke/meatballs.live-stream/blob/main/README.md) and then continue with this guide.
+
+---
+
+`COMMENT_STREAM_URL`
+
+1. Enter `https://localhost:{PORT}`, replacing `{PORT}` with the value used by the STREAM SERVER development environment
+
+`MEATBALLS_COLLECTIONS_START_DATE_KEY`
+
+You will need to configure this accurately once you've generated your first collection. However, you first need to ingest a few days of content.
+
+For now, just use `2022:8:22`. We'll come back to this.
+
+Run `yarn dev`. The APP's development server should now be running at `http://localhost:3000`, but we aren't quite ready to use the front end. This next step will be focused on testing the API.
+
+---
+
+The APP has 3 service APIs. If you are using the Thunder Client extension for VS Code, these requests have been mocked for testing, but you can use any tool you'd like. Here are the endpoints:
+
+```
+POST localhost:3000/api/services/ingest/new-stories?dataSource=hn&limit=1
+```
+
+```
+POST localhost:3000/api/services/ingest/story-activity?dataSource=hn&start=0&end=10&commentWeight=4&falloff=20
+```
+
+```
+POST localhost:3000/api/services/generate/new-collections?dataSource=hn&dateKey=2022:8:28
+```
+
+Each service endpoint accepts an `Authorization` header with value `Bearer {INGEST_API_KEY}`. These APIs should only be called for testing and by the JOBS SERVER.
+
+The two service APIs you should test now are `new-stories` and `story-activity`.
+
+Starting with `new-stories`, parameters `dataSource` should be set to `hn` (Hacker News) with a `limit` of `1`. The Hacker News API that is called by the [new stories ingest processor](https://github.com/ritsuke/meatballs.live/blob/main/src/utils/ingest/hn/processNewStories.ts) returns 500 stories, but we only want to process 1 for testing.
+
+[screenshot redis insight]
 
 ## Deployment
 
-To make deploys work, you need to create free account on [Redis Cloud](https://redis.info/try-free-dev-to)
-
-### Google Cloud Run
-
-[Insert Run on Google button](https://cloud.google.com/blog/products/serverless/introducing-cloud-run-button-click-to-deploy-your-git-repos-to-google-cloud)
-
-### Heroku
-
-[Insert Deploy on Heroku button](https://devcenter.heroku.com/articles/heroku-button)
-
-### Netlify
-
-[Insert Deploy on Netlify button](https://www.netlify.com/blog/2016/11/29/introducing-the-deploy-to-netlify-button/)
-
-### Vercel
-
-[Insert Deploy on Vercel button](https://vercel.com/docs/deploy-button)
-
-## More Information about Redis Stack
-
-Here some resources to help you quickly get started using Redis Stack. If you still have questions, feel free to ask them in the [Redis Discord](https://discord.gg/redis) or on [Twitter](https://twitter.com/redisinc).
+Though meatballs uses [Vercel](https://vercel.com) to automatically deploy the UI, you can run the meatballs UI on any host capable of serving a Next.js app.
 
 ### Getting Started
 
