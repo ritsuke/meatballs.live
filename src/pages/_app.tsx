@@ -27,7 +27,7 @@ function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <SessionProvider session={session}>
       <SocketProvider
-        uri="https://kodama.meatballs.live"
+        uri={process.env.NEXT_PUBLIC_STREAM_SERVER_URL || ''}
         options={{ autoConnect: false }}
       >
         <div

@@ -287,7 +287,7 @@ TS.MRANGE - + FILTER type=weighted compacted=hour GROUPBY story REDUCE max
 The following visually represents graph data for a random story, showing the relationship of comment reactions to the story and the users that created them:
 
 ```
-GRAPH.QUERY
+GRAPH.QUERY _meatballs
   'MATCH graph=(:Story { name: "hn:32532438"})-->(:Comment)-[:REACTION_TO*1..]-(:Comment)<-[:CREATED]-(:User)
   RETURN graph'
 ```
@@ -333,7 +333,7 @@ Let's start with the APP...
 
 [`NEXTAUTH_URL`](https://next-auth.js.org/configuration/options#nextauth_url)
 
-1. Copy and paste `https://localhost:3000` to your `.env` file
+1. Copy and paste `http://localhost:3000` to your `.env` file
 
 [`NEXTAUTH_SECRET`](https://next-auth.js.org/configuration/options#nextauth_secret)
 
@@ -353,9 +353,9 @@ Let's start with the APP...
 
 `UPSTASH_REDIS_AUTH_REST_URL`
 
-1. [Sign up](https://console.upstash.com/login) for a free Upstash account and at the console, under the **Redis** tab, click **Create database**
+1. [Sign up](https://console.upstash.com/login) for a free Upstash account and at the console, under the **Redis** tab, click **Create Database**
 2. Name your database, select type and region, enable TLS and click **Create**
-3. Under the new database details, scroll to **REST API** and copy paste the rest URL to your `.env` file
+3. Under the new database details, scroll to **REST API** and copy and paste the rest URL to your `.env` file
 
 `UPSTASH_REDIS_AUTH_REST_TOKEN`
 
@@ -369,7 +369,7 @@ Let's start with the APP...
 
 1. Create a free [Unsplash](https://unsplash.com/join) account
 2. Navigate to [your apps](https://unsplash.com/oauth/applications), click **New Application** and **Accept Terms**
-3. Enter application name and description
+3. Enter application name and description and click **Create application**
 4. Scroll to down to **Keys**; copy and paste the access key to your `.env` file
 
 `SOURCE_USER_AGENT`
@@ -396,31 +396,33 @@ Copy your `REDIS_DB_URL` value. You will need if for the next step.
 
 ---
 
-Before configuring the remaining environment variables, clone [meatballs.live-stream](https://github.com/ritsuke/meatballs.live-jobs) (STREAM SERVER).
+Before configuring the remaining environment variables, clone [meatballs.live-stream](https://github.com/ritsuke/meatballs.live-stream) (STREAM SERVER).
 
 Follow the [README](https://github.com/ritsuke/meatballs.live-stream/blob/main/README.md) and then continue with this guide.
 
 ---
 
-`STREAM_SERVER_URL`
+`NEXT_PUBLIC_STREAM_SERVER_URL`
 
-1. Enter `https://localhost:{PORT}`, replacing `{PORT}` with the value used by the STREAM SERVER development environment
+1. Enter `http://localhost:{PORT}`, replacing `{PORT}` with the value used by the STREAM SERVER development environment
 
 `MEATBALLS_COLLECTIONS_START_DATE_KEY`
 
-You will need to configure this accurately, once you've generated your first collection. However, you first need to ingest at least 24 hours of source data.
+Once you've generated your first collection, you will need to configure this accurately. However, you first need to ingest at least 24 hours of source data.
 
 For now, just use `2022:8:29`. We'll come back to this.
 
 Run `yarn dev`. The APP's development server should now be running at `http://localhost:3000`, but we aren't quite ready to use the front end.
 
-Open two additional terminals and run `yarn dev` in the JOBS SERVER and STREAM SERVER project folders to start the respective development servers.
+In separate terminals, run `yarn dev` in the JOBS SERVER and STREAM SERVER (if you haven't already) project folders to start the respective development servers.
 
-The JOBS SERVER will kick-of the ingest process. At this time, you should see logging coming from the APP and JOB SERVER terminals. If not, double check the steps above.
+The JOBS SERVER will kick-of the ingest process. At this time, you should see logging coming from the APP and JOB SERVER terminals. If not, double check the steps above. Is the APP using port 3000?
 
-- You will need to keep both of these running for approx. 24 hours before generating your first collection
+- Use [RedisInsight](https://redis.com/redis-enterprise/redis-insight/) to inspect the data coming in
+  - After ~10 minutes, try this command in the workbench: `GRAPH.QUERY \_meatballs 'MATCH (n) RETURN count(\*)' and switch to text data view, in the result row
+- You will need to keep both of these running (APP and JOBS SERVER) for approx. 24 hours before generating your first collection
 - `MEATBALLS_COLLECTIONS_START_DATE_KEY` should be set to this initial time e.g. `2022:8:29`
-- The `STREAM SERVER` is optional to run, but a number of UI components rely on pub events to fully function
+- The **STREAM SERVER** is optional to run, but a number of UI components rely on pub events to fully function
 
 You can now open the front end in your browser, available at `http://localhost:3000`. You will see something like the following:
 
@@ -440,6 +442,8 @@ Accept: */*
 User-Agent: localhost
 Authorization: Bearer {INGEST_API_KEY}
 ```
+
+TIP: If you try this before 24 hours of ingest data, you may receive a `404 Not Found` error. Give it a bit more time.
 
 TIP: Use the included [Thunder Client](https://marketplace.visualstudio.com/items?itemName=rangav.vscode-thunder-client) mocks.
 

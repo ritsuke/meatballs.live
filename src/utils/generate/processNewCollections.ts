@@ -128,7 +128,7 @@ const processNewCollections = async ({
     const foundStories = await findStoriesTransaction.exec()
 
     if (foundStories.length === 0) {
-      throw new Error(`${HTTP_STATUS_CODE.CONFLICT}`)
+      throw new Error(`${HTTP_STATUS_CODE.NOT_FOUND}`)
     }
 
     const rankedStories = foundStories
