@@ -216,7 +216,7 @@ const processNewCollections = async ({
                 ),
                 {
                   headers: {
-                    Authorization: `Client-ID ${process.env.UNSPLASH_CLIENT_ID}`
+                    Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
                   }
                 }
               )

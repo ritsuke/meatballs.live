@@ -1,0 +1,58 @@
+{
+  "app_name": "meatballs.live",
+  "description": "meatballs is an automated recommendation network and web app for discovering interesting conversations across social news.",
+  "hidden": "true",
+  "rank": "21",
+  "type": "Full App",
+  "contributed_by": "Community",
+  "repo_url": "https://github.com/ritsuke/meatballs.live",
+  "download_url": "https://github.com/ritsuke/meatballs.live/archive/refs/heads/main.zip",
+  "hosted_url": "https://www.meatballs.live",
+  "quick_deploy": "false",
+  "deploy_buttons": [],
+  "language": [
+    "JavaScript"
+  ],
+  "redis_commands": [
+    "EXISTS",
+    "SET",
+    "GET",
+    "MULTI",
+    "EXEC",
+    "JSON.GET",
+    "JSON.SET",
+    "FT.SEARCH",
+    "GRAPH.QUERY",
+    "TS.CREATE",
+    "TS.CREATERULE",
+    "TS.ADD",
+    "TS.MRANGE",
+    "PUBLISH",
+    "SUBSCRIBE"
+  ],
+  "redis_features": [],
+  "redis_modules": [
+    "RedisJSON",
+    "RedisGraph",
+    "RedisTimeseries"
+  ],
+  "app_image_urls": [
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/app-frontpage-and-comment-stream.png",
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/app-collections-grid.png",
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/app-collection-modal.png",
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/app-collection-modal-ipad.png",
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/meatballs-architecture-diagram.png",
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/meatballs-graph-model-diagram.png",
+    "https://github.com/ritsuke/meatballs.live/blob/main/assets/redis-insight-graph-data.png"
+  ],
+  "youtube_url": "",
+  "special_tags": [
+    "Hackathon"
+  ],
+  "verticals": [
+    "Social Media",
+    "News",
+    "Others"
+  ],
+  "markdown": "https://github.com/ritsuke/meatballs.live/blob/main/README.md"
+}

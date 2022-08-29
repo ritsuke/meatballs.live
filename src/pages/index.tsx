@@ -24,9 +24,8 @@ export const getServerSideProps: GetServerSideProps = async (): Promise<
   return {
     props: {
       data: {
-        collectionsDateKey: `2022:8:23`
-        // TODO: starting with the 23rd
-        // process.env.MEATBALLS_COLLECTIONS_START_DATE_KEY || null
+        collectionsDateKey:
+          process.env.MEATBALLS_COLLECTIONS_START_DATE_KEY || null
       }
     }
   }

@@ -24,13 +24,11 @@ Here's a short video that explains the project and how it uses Redis:
 
 ## How it works
 
----
-
 meatballs was created for the [DEV.to x Redis Hackathon](https://dev.to/devteam/announcing-the-redis-hackathon-on-dev-3248), with three primary design goals:
 
-1. leverage the Redis Stack to consume, process, sift and generate insights from big data
-2. learn and utilize as many multi-model capabilities of the Redis Stack as possible
-3. combine 1 and 2 to create a fast and compelling user experience for desktop and mobile
+1. Learn and utilize as many multi-model capabilities of the Redis Stack as possible
+2. Leverage the Redis Stack to consume, process, sift and generate insights from big data
+3. Combine 1 and 2 to create a fast and compelling user experience for desktop and mobile
 
 To meet the challenge, meatballs is three open-source projects:
 
@@ -45,13 +43,13 @@ The high level architecture for meatballs is as follows:
 
 ![meatballs high-level architecture diagram](assets/meatballs-architecture-diagram.png)
 
-The JOBS SERVER (casper) calls the APP's [services APIs to ingest](https://github.com/ritsuke/meatballs.live/tree/main/src/pages/api/services/ingest), process and route source data from Hacker News ([Official](https://github.com/HackerNews/API) | [Algolia](https://hn.algolia.com/api)) to the primary Redis database.
+The JOBS SERVER (casper) calls the APP's [services APIs to ingest](https://github.com/ritsuke/meatballs.live/tree/main/src/pages/api/services/ingest), process and route source data from Hacker News ([Official](https://github.com/HackerNews/API) | [Algolia](https://hn.algolia.com/api)) to the primary cloud Redis database.
 
 Ingest data is saved to [JSON](https://redis.io/docs/stack/json/), [graph](https://redis.io/docs/stack/graph/), [time series](https://redis.io/docs/stack/timeseries/) and cache (see details in the following sections).
 
 The APP's front end UI connects to the STREAM SERVER (kodama) via web sockets ([Socket.io](https://socket.io)). The STREAM SERVER [subscribes to Redis channels](https://redis.io/docs/manual/pubsub/) for presence, new comments and frontpage stats and emits events to connected APP clients. The STREAM SERVER also publishes to the presence channel as clients connect and disconnect.
 
-On new story activity, the JOBS SERVER (casper) [publishes](https://redis.io/docs/manual/pubsub/) an update to the Frontpage stats channel, which is sent as an event from the STREAM SERVER to connected APP clients. On new comments from an APP user, the APP front end calls the protected [`publish-comments`](https://github.com/ritsuke/meatballs.live/blob/main/src/pages/api/stream/publish-comment.ts) API to publish to the new comments channels.
+On new story activity, the JOBS SERVER [publishes](https://redis.io/docs/manual/pubsub/) an update to the Frontpage stats channel, which is sent as an event from the STREAM SERVER to connected APP clients. On new comments from an APP user, the APP front end calls the protected [`publish-comments`](https://github.com/ritsuke/meatballs.live/blob/main/src/pages/api/stream/publish-comment.ts) API to publish to the new comments channels.
 
 APP users must be signed in to send new comments. For authentication, the APP uses a combination of [NextAuth](https://next-auth.js.org), [GitHub](https://next-auth.js.org/providers/github) and [Upstash](https://upstash.com/blog/next-auth-serverless-redis). Yes, even auth on the backend is persisted to a Redis server!
 
@@ -70,11 +68,11 @@ Hosted by [Redis Cloud](https://redis.info/try-free-dev-to) and [Vercel](https:/
 
 ### Additional metrics
 
-REDIS CLOUD
+**REDIS CLOUD** (Primary Database)
 
 ![Redis Cloud Metrics (various charts)](assets/redis-cloud-metrics.png)
 
-VERCEL (APP UI and APIs)
+**VERCEL** (APP UI and APIs)
 
 Serverless Functions
 
@@ -84,7 +82,7 @@ Execution
 
 ![Vercel Metrics (bar chart; executions)](assets/vercel-execution-metrics.png)
 
-RAILWAY (JOBS and STREAM SERVERS)
+**RAILWAY** (JOBS and STREAM SERVERS)
 
 ![Railway Metrics (cpu and ram chart)](assets/railway-metrics.png)
 
@@ -234,7 +232,7 @@ To keep the user experience snappy, the meatballs.live APP only accesses cache d
 
 `GET Collection:{year}:{month}:{day}:{collection_id}:\_cache`
 
-Otherwise, the APP's services APIs (called by the [JOBS SERVER](https://github.com/ritsuke/meatballs.live-jobs)) executes **ingest** and **generate** processors for CRUD operations. The following documents the [Redis commands](https://redis.io/commands/) for ingesting new stories, but note that the APP utilizes [**node-redis**](https://github.com/redis/node-redis) and [**redis-node-om**](https://github.com/redis/redis-om-node) to create the respective clients.
+Otherwise, the APP's services APIs (called by the [JOBS SERVER](https://github.com/ritsuke/meatballs.live-jobs)) executes **ingest** processors for query/CRUD operations. The following documents the [Redis commands](https://redis.io/commands/) for ingesting new stories, but note that the APP utilizes [**node-redis**](https://github.com/redis/node-redis) and [**redis-node-om**](https://github.com/redis/redis-om-node) to create the respective clients.
 
 `src/pages/api/services/ingest/new-stories.ts` -> [`processNewStories`](https://github.com/ritsuke/meatballs.live/blob/main/src/utils/ingest/hn/processNewStories.ts)
 
@@ -268,11 +266,13 @@ The next two processors are more complex. To keep this README manageable, please
 
 `src/pages/api/services/generate/new-collections.ts` -> [`processNewCollections`](https://github.com/ritsuke/meatballs.live/blob/main/src/utils/generate/processNewCollections.ts)
 
+- query/CRUD for new collections; called manually
+
 **Comment Stream**
 
 The APP connects to the [STREAM SERVER](https://github.com/ritsuke/meatballs.live-stream) via web sockets.
 
-The STREAM SERVER [creates a pub and sub Redis client](https://github.com/ritsuke/meatballs.live-stream/blob/main/src/index.ts) for emitting events to connected APP sockets.
+The STREAM SERVER [creates separate pub and sub Redis clients](https://github.com/ritsuke/meatballs.live-stream/blob/main/src/index.ts) for emitting events to connected APP sockets.
 
 **RedisInsight Examples**
 
@@ -288,8 +288,8 @@ The following visually represents graph data for a random story, showing the rel
 
 ```
 GRAPH.QUERY
-  MATCH graph=(:Story { name: "hn:32532438"})-->(:Comment)-[:REACTION_TO*1..]-(:Comment)<-[:CREATED]-(:User)
-  RETURN graph
+  'MATCH graph=(:Story { name: "hn:32532438"})-->(:Comment)-[:REACTION_TO*1..]-(:Comment)<-[:CREATED]-(:User)
+  RETURN graph'
 ```
 
 ![meatballs graph data by story](assets/redis-insight-graph-data.png)
@@ -314,7 +314,7 @@ For sanity, the three projects that must be setup will be referred to as:
 - [Node](https://nodejs.org/download/release/v16.5.0/) 16.50.0
 - [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/) 1.22.19
 - [Thunder Client for VS Code](https://marketplace.visualstudio.com/items?itemName=rangav.vscode-thunder-client); optional, but required to use [thunder-tests](https://github.com/ritsuke/meatballs.live/tree/main/thunder-tests)
-- Redis Stack DB credentials and endpoint ([Redis Cloud](https://redis.info/try-free-dev-to) or [local install](stack))
+- Redis Stack DB instance and credentials and endpoint ([Redis Cloud](https://redis.info/try-free-dev-to) or [local install](stack))
 - [Github account](https://github.com/settings/apps); app credentials (auth)
 - [Upstash account](https://upstash.com/blog/next-auth-serverless-redis); app credentials (auth)
 - [Unsplash account](https://unsplash.com/oauth/applications); DB credentials and endpoint (collection cover)
@@ -402,7 +402,7 @@ Follow the [README](https://github.com/ritsuke/meatballs.live-stream/blob/main/R
 
 ---
 
-`COMMENT_STREAM_URL`
+`STREAM_SERVER_URL`
 
 1. Enter `https://localhost:{PORT}`, replacing `{PORT}` with the value used by the STREAM SERVER development environment
 
@@ -426,7 +426,7 @@ You can now open the front end in your browser, available at `http://localhost:3
 
 ![meatballs Frontpage and Comment Stream](assets/app-frontpage-and-comment-stream.png)
 
-Clicking on **collections** will result in a 404.
+Clicking on the **collections** link (if visible) will result in a 404.
 
 Has it been 24 hours? If so, generate your first collection!
 
@@ -453,8 +453,6 @@ Though meatballs uses [Vercel](https://vercel.com) to automatically deploy the A
 Ensure that the [JOBS SERVER](https://github.com/ritsuke/meatballs.live-jobs) and [STREAM SERVER](https://github.com/ritsuke/meatballs.live-stream) are also deployed.
 
 ## More Information about Redis Stack
-
----
 
 ### Getting Started
 
