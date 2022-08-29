@@ -33,25 +33,28 @@ const CollectionsNavBar = ({
     >
       <div
         className={classnames(
-          'h-full max-w-[1050px] mx-auto grid grid-cols-3 items-center px-2 lg:px-6'
+          'h-full max-w-[1050px] mx-auto grid grid-cols-3 items-center px-6'
         )}
       >
         <div className={classnames('text-2xl font-bold self-center')}>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
-            className={classnames('inline m-0 sm:mr-3 mb-1', 'text-primary')}
-          >
-            <circle cx="8" cy="8" r="8" />
-          </svg>
-          <span className={classnames('hidden lg:inline')}>
-            <Link href="/">
-              <a className={classnames('no-underline')}>meatballs</a>
-            </Link>
-          </span>
+          <Link href="/">
+            <a className={classnames('no-underline')}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+                className={classnames(
+                  'inline m-0 sm:mr-3 mb-1',
+                  'text-primary'
+                )}
+              >
+                <circle cx="8" cy="8" r="8" />
+              </svg>
+              <span className={classnames('hidden lg:inline')}>meatballs</span>
+            </a>
+          </Link>
         </div>
 
         <div
