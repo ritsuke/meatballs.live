@@ -20,7 +20,7 @@ By ingesting, connecting and analyzing large amounts of structured, temporal dat
 
 Here's a short video that explains the project and how it uses Redis:
 
-[![meatballs Video Introduction](assets/video-screenshot.png)](https://www.youtube.com/watch?v=vyxdC1qK4NE)
+[![meatballs Video Introduction](assets/video-screenshot.png)](https://youtu.be/vaG_xYx36CU)
 
 ## How it works
 
@@ -51,7 +51,7 @@ The **APP**'s front end UI connects to the **STREAM SERVER** (kodama) via web so
 
 On new story activity, the **JOBS SERVER** [publishes](https://redis.io/docs/manual/pubsub/) an update to the Frontpage stats channel, which is sent as an event from the **STREAM SERVER** to connected **APP** clients. On new comments from an **APP** user, the **APP** front end calls the protected [`publish-comments`](https://github.com/ritsuke/meatballs.live/blob/main/src/pages/api/stream/publish-comment.ts) API to publish to the new comments channels.
 
-**APP** users must be signed in to send new comments. For authentication, the **APP** uses a combination of [NextAuth](https://next-auth.js.org), [GitHub](https://next-auth.js.org/providers/github) and [Upstash](https://upstash.com/blog/next-auth-serverless-redis). Yes, even auth on the backend is persisted to a Redis server!
+**APP** users must be signed in to send new comments. For authentication, the **APP** uses a combination of [NextAuth](https://next-auth.js.org), [GitHub](https://next-auth.js.org/providers/github) and [Upstash](https://upstash.com/blog/next-auth-serverless-redis). Yes, even auth on the backend is persisted to a Redis database!
 
 After at least 24 hours of ingest data, the **APP**'s services [API for generating collections](https://github.com/ritsuke/meatballs.live/tree/main/src/pages/api/services/generate) can be called. The [generate processor](https://github.com/ritsuke/meatballs.live/blob/main/src/utils/generate/processNewCollections.ts) uses a combination of time series, graph and JSON queries and search to create JSON->string caches for the day (9 stories) and each individual story collection.
 
@@ -300,7 +300,7 @@ GRAPH.QUERY _meatballs
 
 This is a complex, **wacky wildcard** of a platform, with three projects to configure. Strap in tight!
 
-If you have any issues, please open a ticket.
+The process takes ~15-30 minutes. If you have any issues, please open a ticket.
 
 For sanity, the three projects that must be setup will be referred to as:
 
